@@ -1,0 +1,25 @@
+
+--- NEW SESSION: 14/05/2025 15:44:33 ---
+/solverNode/deformableNode/model/CFFNode/CFF1.totalForce = 0 0 -100000
+/solverNode/deformableNode/model/CFFNode/CFF1.showArrowSize = 0.01
+/solverNode/deformableNode/model/CFFNode/CFF1.showColor = 0.2 0.898039 0.298039 1
+
+--- NEW SESSION: 14/05/2025 17:39:03 ---
+/solverNode/deformableNode/model/MarkerNode/MechanicalObject.showColor = 0 1 0 1
+
+--- NEW SESSION: 15/05/2025 12:05:39 ---
+/solverNode/deformableNode/model/boxROI.drawROI = 1
+
+--- NEW SESSION: 15/05/2025 16:26:09 ---
+/solverNode/RigidNode/RigidMesh.velocity = -0.00509179 -0.00199471 -0.0122076 -0.0012207 0.000258594 -0.000700554
+/solverNode/RigidNode/RigidMesh.force = -458.718 1113.49 -1438.63 2735.56 -728.781 1053.92
+/solverNode/RigidNode/RigidMesh.free_velocity = -0.00509179 -0.00199471 -0.0122076 -0.0012207 0.000258594 -0.000700554
+/solverNode/RigidNode/RigidMesh.showColor = 1 1 1 1
+/solverNode/RigidNode/RigidMesh.solution = 0.000833353 -0.00291674 0.00248857 -0.000734457 0.000356722 8.62619e-06
+/solverNode/RigidNode/RigidifiedNode/RigidifiedMesh.showColor = 1 0 0 1
+/solverNode/RigidNode/RigidifiedNode/RigidMapping.rigidIndexPerPoint = 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+/solverNode/RigidNode/RigidMesh.velocity = -0.00509179 -0.00199471 -0.0122076 -0.0012207 0.000258594 -0.000700554
+/solverNode/RigidNode/RigidMesh.force = -458.718 1113.49 -1438.63 2735.56 -728.781 1053.92
+/solverNode/RigidNode/RigidMesh.free_velocity = -0.00509179 -0.00199471 -0.0122076 -0.0012207 0.000258594 -0.000700554
+/solverNode/RigidNode/RigidMesh.showColor = 1 1 1 1
+/solverNode/RigidNode/RigidMesh.solution = 0.000833353 -0.00291674 0.00248857 -0.000734457 0.000356722 8.62619e-06
