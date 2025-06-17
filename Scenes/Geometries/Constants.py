@@ -5,23 +5,27 @@ Created on Mon May 12 17:14:21 2025
 
 @author: benjamin
 """
+
 import numpy as np 
 
+
+
+DiskRadius = 2
 BoxROITolerance = 0.2
 MagnetBoxTolerance = 0.1
 SensorHeight = 3
 SensorWidth = 20
-SensorLength =50
-
+SensorLength = 30
 PoissonRatio = 0.4
-YoungsModulus = 2000
+YoungsModulus = 40000
 
 #Generate grid
 GridMargin = 10 
-Gridrows = 3
-Gridcols = 5
+Gridrows = 2
+Gridcols = 3
 NMagnets = Gridcols*Gridrows
 MagnetSide = 1
+CutMargin = GridMargin*0.2
 # MagnetPosition = [0, 0, SensorHeight/2]
 
 DeltaPositionSensor = 1
@@ -30,18 +34,45 @@ mu_mag_delGráfico =   4.627195188680999e-08
 x = np.linspace(-(SensorLength - GridMargin)/2, (SensorLength - GridMargin)/2, Gridcols)
 y = np.linspace(-(SensorWidth - GridMargin)/2, (SensorWidth- GridMargin)/2, Gridrows)
 X, Y = np.meshgrid(x, y)
+
+#Grilla de imanes en plano xy
 GridPoints = np.column_stack((X.ravel(), Y.ravel()))
-MagnetCenters = [[px, py, SensorHeight / 2] for px, py in GridPoints]
 
+#Coords 3d magnets center 
+MagnetCenters = []
+MagnetCenters.append([-7.5, 0, 0])
+MagnetCenters += [[px, py, SensorHeight / 2] for px, py in GridPoints]
 
+MagnetFreeCenters = MagnetCenters[1:]
+
+print(MagnetCenters)
 # print(GridPoints)
-BoxROIFixCoords = [SensorLength/2 + BoxROITolerance,
-                   SensorWidth/2 + BoxROITolerance, 
-                   BoxROITolerance, 
-                   -(SensorLength/2 + BoxROITolerance), 
-                   -(SensorWidth/2 + BoxROITolerance), 
-                   -BoxROITolerance ]
+# BoxROIFixCoords = [SensorLength/2 + BoxROITolerance,
+#                     SensorWidth/2 + BoxROITolerance, 
+#                     BoxROITolerance, 
+#                     -(SensorLength/2 + BoxROITolerance), 
+#                     -(SensorWidth/2 + BoxROITolerance), 
+#                     -BoxROITolerance ]
 
+#Coordenadas para sistema articulado
+BoxROIFixCoords = [SensorLength/2 + BoxROITolerance,
+                    SensorWidth/2 + BoxROITolerance, 
+                    BoxROITolerance, 
+                    -(-CutMargin + BoxROITolerance), 
+                    -(SensorWidth/2 + BoxROITolerance), 
+                    -BoxROITolerance ]
+
+BoxROIFixCoords1 = [
+    -(SensorLength / 2 + BoxROITolerance),   
+    -(SensorWidth / 2 + BoxROITolerance),   
+    -SensorHeight / 2 - BoxROITolerance,     
+
+      0,                                     
+      (SensorWidth / 2 + BoxROITolerance),    
+      BoxROITolerance      
+]
+
+#Para un solo iman
 # MagnetBoxCoords = [MagnetPosition[0] - (MagnetSide/2 + MagnetBoxTolerance), 
 #                     MagnetPosition[1] - (MagnetSide/2 + MagnetBoxTolerance), 
 #                     MagnetPosition[2] - (MagnetSide/2 + MagnetBoxTolerance), 
@@ -51,8 +82,9 @@ BoxROIFixCoords = [SensorLength/2 + BoxROITolerance,
 
 
 
+#Coordenadas para los boxROI de los imanes 
 MagnetBoxCoords = []
-
+MagnetBoxCoords.append(BoxROIFixCoords1)
 for point in GridPoints:
     px, py = point
     pz = SensorHeight / 2
@@ -65,4 +97,80 @@ for point in GridPoints:
         pz + (MagnetSide/2 + MagnetBoxTolerance)
     ]
     MagnetBoxCoords.append(box)
-   
+# print(MagnetBoxCoords)  
+
+#Index for subsetmultimapping
+IndexPairs = [0, 1]
+for i in range(NMagnets):
+    IndexPairs.extend([1, i])
+    
+
+
+
+
+
+
+
+################# old init
+
+# import numpy as np 
+
+
+
+# DiskRadius = 2
+# BoxROITolerance = 0.2
+# MagnetBoxTolerance = 0.1
+# SensorHeight = 3
+# SensorWidth = 20
+# SensorLength = 30
+# PoissonRatio = 0.4
+# YoungsModulus = 10000
+
+# #Generate grid
+# GridMargin = 10 
+# Gridrows = 2
+# Gridcols = 3
+# NMagnets = Gridcols*Gridrows
+# MagnetSide = 1
+# CutMargin = GridMargin*0.2
+
+# DeltaPositionSensor = 1
+# mu_mag_delGráfico =   4.627195188680999e-08
+
+# x = np.linspace(-(SensorLength - GridMargin)/2, (SensorLength - GridMargin)/2, Gridcols)
+# y = np.linspace(-(SensorWidth - GridMargin)/2, (SensorWidth- GridMargin)/2, Gridrows)
+# X, Y = np.meshgrid(x, y)
+
+# GridPoints = np.column_stack((X.ravel(), Y.ravel()))
+
+# MagnetCenters = []
+# MagnetCenters += [[px, py, SensorHeight / 2] for px, py in GridPoints]
+
+# BoxROIFixCoords = [SensorLength/2 + BoxROITolerance,
+#                     SensorWidth/2 + BoxROITolerance, 
+#                     BoxROITolerance, 
+#                     -(SensorLength/2 + BoxROITolerance), 
+#                     -(SensorWidth/2 + BoxROITolerance), 
+#                     -BoxROITolerance ]
+
+
+# MagnetBoxCoords = []
+
+# for point in GridPoints:
+#     px, py = point
+#     pz = SensorHeight / 2
+#     box = [
+#         px - (MagnetSide/2 + MagnetBoxTolerance),
+#         py - (MagnetSide/2 + MagnetBoxTolerance),
+#         pz - (MagnetSide/2 + MagnetBoxTolerance),
+#         px + (MagnetSide/2 + MagnetBoxTolerance),
+#         py + (MagnetSide/2 + MagnetBoxTolerance),
+#         pz + (MagnetSide/2 + MagnetBoxTolerance)
+#     ]
+#     MagnetBoxCoords.append(box)
+# #Index for subsetmultimapping
+# IndexPairs = [0, 1]
+# for i in range(NMagnets):
+#     IndexPairs.extend([1, i])
+    
+

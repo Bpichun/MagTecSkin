@@ -36,20 +36,20 @@ class Controller(Sofa.Core.Controller):
         Sofa.Core.Controller.__init__(self, *args, **kwargs)
         print(" Python::__init__::" + str(self.name.value))
         
-        self.RootNode = kwargs['RootNode']
+        # self.RootNode = kwargs['RootNode']
         #self.PositionEffector = kwargs['PositionEffector']
         self.RigidMO = kwargs['RigidMO']
         self.CFF = kwargs['CFF']
         self.CFFSphereROI = kwargs['CFFSphereROI']
-        self.ForceVector = np.array([0,0,0])
-        self.InitialGoalPosition = self.ForceVector
+        # self.ForceVector = np.array([0,0,0])
+        # self.InitialGoalPosition = self.ForceVector
 
 
         print(kwargs['RootNode'])
         
-        self.ModelNode = self.RootNode.solverNode.deformableNode.model        
+        # self.ModelNode = self.RootNode.solverNode.deformableNode.model        
         self.t = 0
-        print('Finished Init')
+        # print('Finished Init')
         
 # class Controller(Sofa.Core.Controller):   
     
@@ -148,7 +148,7 @@ class Controller(Sofa.Core.Controller):
         self.MoveCFFSphereROI()
         # self.onKeypressedEvent()
         # self.mapCapCoordinatesTo3DCoords()
-        self.CFF.totalForce.value = [0,0,-20000]
+        self.CFF.totalForce.value = [0,0,-300000]
         np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value)
         print(f"MagnetPose: {self.RigidMO.position.value}")       
         
@@ -158,7 +158,7 @@ def createScene(rootNode):
 
                 rootNode.addObject('RequiredPlugin', pluginName='SofaPython3 SoftRobots SoftRobots.Inverse')
                 rootNode.addObject('VisualStyle', displayFlags='hideWireframe showBehaviorModels hideCollisionModels hideBoundingCollisionModels showForceFields showInteractionForceFields')
-
+                rootNode.addObject('RequiredPlugin', name="ArticulatedSystemPlugin")
                 rootNode.findData('gravity').value = [0, 0, -9810] #
                 #rootNode.findData('gravity').value = [0, 0, -1000] #
                 rootNode.findData('dt').value = 0.02
@@ -171,8 +171,33 @@ def createScene(rootNode):
 
                 #rootNode.addObject('BackgroundSetting', color='0 0.168627 0.211765')
                 rootNode.addObject('BackgroundSetting', color='0.85 0.85 0.85')
-                
-                
+                root = Sofa.Core.Node()
+
+                # Carga de plugins necesarios
+                root.addObject('RequiredPlugin', name='Sofa.Component.AnimationLoop')
+                root.addObject('RequiredPlugin', name='Sofa.Component.Constraint.Lagrangian.Correction')
+                root.addObject('RequiredPlugin', name='Sofa.Component.Constraint.Lagrangian.Solver')
+                root.addObject('RequiredPlugin', name='Sofa.Component.Constraint.Projective')
+                root.addObject('RequiredPlugin', name='Sofa.Component.Engine.Select')
+                root.addObject('RequiredPlugin', name='Sofa.Component.IO.Mesh')
+                root.addObject('RequiredPlugin', name='Sofa.Component.LinearSolver.Direct')
+                root.addObject('RequiredPlugin', name='Sofa.Component.LinearSolver.Iterative')
+                root.addObject('RequiredPlugin', name='Sofa.Component.Mapping.Linear')
+                root.addObject('RequiredPlugin', name='Sofa.Component.Mapping.NonLinear')
+                root.addObject('RequiredPlugin', name='Sofa.Component.Mass')
+                root.addObject('RequiredPlugin', name='Sofa.Component.MechanicalLoad')
+                root.addObject('RequiredPlugin', name='Sofa.Component.ODESolver.Backward')
+                root.addObject('RequiredPlugin', name='Sofa.Component.Setting')
+                root.addObject('RequiredPlugin', name='Sofa.Component.SolidMechanics.FEM.Elastic')
+                root.addObject('RequiredPlugin', name='Sofa.Component.SolidMechanics.Spring')
+                root.addObject('RequiredPlugin', name='Sofa.Component.StateContainer')
+                root.addObject('RequiredPlugin', name='Sofa.Component.Topology.Container.Constant')
+                root.addObject('RequiredPlugin', name='Sofa.Component.Topology.Container.Dynamic')
+                root.addObject('RequiredPlugin', name='Sofa.Component.Visual')
+                root.addObject('RequiredPlugin', name='Sofa.GL.Component.Rendering3D')
+                root.addObject('RequiredPlugin', name='Sofa.GL.Component.Shader')
+
+         
                 rootNode.addObject('LightManager')
                 rootNode.addObject(
                     "PositionalLight",
@@ -239,11 +264,12 @@ def createScene(rootNode):
                 # boxBody.init()
                 #boxFixed.init()
                 Boxes = []
-                for i in range(0, Const.NMagnets):
-                    boxTip = completeMesh.addObject('BoxROI', name='Tip'+str(i), box=[Const.MagnetBoxCoords[i]], drawBoxes=True, tetrahedra="@container.tetrahedra" , position="@container.position")
+                for i in range(len(Const.MagnetBoxCoords)):
+                    boxTip = completeMesh.addObject('BoxROI', name='Tip'+str(i), box=[Const.MagnetBoxCoords[i]], drawBoxes=True, 
+                                                    tetrahedra="@container.tetrahedra" , position="@container.position")
                     Boxes.append(boxTip)
                     boxTip.init()
-                
+                  
                 # boxTip = Boxes[-1]
                 
                 
@@ -273,6 +299,7 @@ def createScene(rootNode):
                 rigidBlocks = [IndicesWithRigidIdxSorted.tolist()] 
                 
                 DeformableIndicesTotal = []    
+                
                 
                 
                 
@@ -337,6 +364,11 @@ def createScene(rootNode):
                 solverNode.addObject('GenericConstraintCorrection', linearSolver='@preconditioner')
                 # solverNode.addObject('MechanicalMatrixMapper', template='Vec3d,Rigid3d', object1='@./deformableNode/DeformableMech', object2='@./RigidNode/RigidMesh', nodeToParse='@./deformableNode/model' )
                 #solverNode.addObject('MechanicalMatrixMapper', template='Rigid,Rigid', object1='@./RigidNode/RigidMesh', object2='@./RigidNode/RigidMesh', nodeToParse='@./RigidNode/RigidifiedNode', stopAtNodeToParse=True )
+                
+              
+                
+                
+                
                 deformableNode = solverNode.addChild("deformableNode")
                 deformableNode.addObject('PointSetTopologyContainer', position=pointsBody)
                 deformableNode.addObject('MechanicalObject', name='DeformableMech')
@@ -345,6 +377,46 @@ def createScene(rootNode):
                 
                 
                 RigidNode= solverNode.addChild('RigidNode')
+                servoBody = RigidNode.addChild('ServoBody')
+                servoBody.addObject('MechanicalObject', name='dofs', template='Rigid3',
+                position=[[0, 0., 0., 0., 0., 0., 1.]],
+                translation=[0.0, 0.0, 0.0],
+                rotation=[0.0, 0.0, 0.0])
+                servoBody.addObject('FixedProjectiveConstraint', indices=0)
+                servoBody.addObject('UniformMass', totalMass=0.01)
+                
+                
+                articulation = RigidNode.addChild('Articulation')
+                articulation.addObject('MechanicalObject', name='angle', template='Vec1', position=[[-0.4]])
+                articulation.addObject('UniformMass', totalMass=0.01)
+                # articulation.addObject('SinusoidalForceField', indices=0, amplitude=[1], frequency=[1])
+                
+                # articulation.addObject('RestShapeSpringsForceField', points=0, stiffness=1e9)
+                articulation.addObject('ArticulatedHierarchyContainer', printLog=True)
+                
+                servoWheel = articulation.addChild('ServoWheel')
+                servoWheel.addObject('MechanicalObject', name='dofs', template='Rigid3',
+                                     position=[[0, 0., 0., 0., 0., 0., 1.], [0, 0., 0., 0., 0., 0, 1.]],
+                                     showObject=True,
+                                     showObjectScale=5)
+                
+                servoWheel.addObject('ArticulatedSystemMapping',
+                                     input1="@../angle",
+                                     input2="@../../ServoBody/dofs",
+                                     output="@./")
+                                
+                center = articulation.addChild('ArticulationCenter')
+                center.addObject('ArticulationCenter',
+                                  parentIndex=0,
+                                  childIndex=1,
+                                  posOnParent=[0., 0., 0.],
+                                  posOnChild=[0, 0., 0.])
+                
+                center.addObject('Articulation',
+                                  translation=False,
+                                  rotation=True,
+                                  rotationAxis=[0, 1, 0],
+                                  articulationIndex=0)
 
                 #RigidNode.addObject("MechanicalObject",template="Rigid3d",name="RigidMesh", position=[[0, 0, Const.Height, 0.23622992, 0.30639972, 0.12644464, 0.91341469]], showObject=True, showObjectScale=5) # orientation is 240 deg away from scene origin
                 
@@ -359,6 +431,9 @@ def createScene(rootNode):
                     # CurrentPose = [Const.MagnetCenters[i],Const.MagnetCenters[i],Const.MagnetCenters[i], 0,0,0,1]
                     CurrentPose = center + [0,0,0,1]
                     nominal_pose += CurrentPose
+                    
+                    
+      
                 RigidMO = RigidNode.addObject("MechanicalObject",template="Rigid3d",name="RigidMesh", position=nominal_pose, showObject=True, showObjectScale=2) # orientation is 240 deg away from scene origin
 
                 #RigidNode.addObject('BoxROI', name='BoxForSliding', box=Constants.SlidingBoxCoords, drawBoxes='true')
@@ -522,12 +597,14 @@ def createScene(rootNode):
                 CFF = CFFNode.addObject('ConstantForceField', name='CFF1', template='Vec3', indices='@CFFSphereROI.indices', totalForce=[0, 0, 0]) #, showDirection=True, showVisuScale=10)                               
                 CFFNode.addObject("BarycentricMapping")
                 
-                MarkerNode = model.addChild('MarkerNode')
-                MarkerMO = MarkerNode.addObject('MechanicalObject', position=[[0,0,0]], showObject=True, showObjectScale=20, showColor=[0,1,0])
-                MarkerNode.addObject('BarycentricMapping')
+                # MarkerNode = model.addChild('MarkerNode')
+                # MarkerMO = MarkerNode.addObject('MechanicalObject', position=[[0,0,0]], showObject=True, showObjectScale=20, showColor=[0,1,0])
+                # MarkerNode.addObject('BarycentricMapping')
    
                 
-                rootNode.addObject(Controller(name="ActuationController", RootNode=rootNode, RigidMO=RigidMO, CFF=CFF, CFFSphereROI=CFFSphereROI))  
+                rootNode.addObject(Controller(name="ActuationController", RootNode=rootNode, RigidMO=RigidMO,
+                                              CFF=CFF,
+                                              CFFSphereROI=CFFSphereROI))  
 
                 # rootNode.addObject(Controller(name="ActuationController",
                 #                             RootNode=rootNode,
