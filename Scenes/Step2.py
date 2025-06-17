@@ -47,7 +47,23 @@ class Controller(Sofa.Core.Controller):
         self.CFFSphereROI.centers = [[x, y, z]]  
         self.t += 1  
         
-   
+    def mapCapCoordinatesTo3DCoords(self):
+        WeightList = np.loadtxt("Touch/WeightList.txt")
+        print(f"WeightList: {WeightList}")
+        IdxList = np.loadtxt("Touch/IdxList.txt", dtype ='int')
+        print(f"IdxList: {IdxList}")
+
+        Vsum = np.sum(WeightList)
+        Sum = np.array([0,0,0])
+        for (i,Idx) in enumerate(IdxList):
+            LinearIdx = Idx[0]* 10  + Idx[1]
+            print(f"LinearIdx: {LinearIdx}")
+            Wi = WeightList[i]/Vsum
+            Coords3D =  np.array(ContactNodeMO.position.value[LinearIdx]* Wi)
+            Sum = Sum + Coords3D        
+        self.CFFSphereROI.centers = [Sum]
+        print("SUM", Sum)
+
     def onAnimateBeginEvent(self, eventType):
         self.MoveCFFSphereROI()
         # self.onKeypressedEvent()
@@ -282,6 +298,22 @@ def createScene(rootNode):
       
     
     
+    
+    
+    
+    # ##########################################
+    # # Points On Surface                      #
+    # ##########################################   
+    # global ContactNodeMO, points 
+    # points = np.load("Touch/PointsOnSurface.npy")
+    # print("points",points)
+    # # points_ordenados = sorted(points, key=lambda p: (float(p[0]), float(p[1])))
+    # ContactNode = model.addChild("ContactNode")
+    # ContactNodeMO = ContactNode.addObject("MechanicalObject", position=points, showColor=[0,0,200], showObjectScale=10, showObject=False,showIndices = True)
+    # ContactNode.addObject("BarycentricMapping")
+
+
+
     # ----------------------------------------
     # Visualization                          
     # ----------------------------------------

@@ -377,46 +377,7 @@ def createScene(rootNode):
                 
                 
                 RigidNode= solverNode.addChild('RigidNode')
-                servoBody = RigidNode.addChild('ServoBody')
-                servoBody.addObject('MechanicalObject', name='dofs', template='Rigid3',
-                position=[[0, 0., 0., 0., 0., 0., 1.]],
-                translation=[0.0, 0.0, 0.0],
-                rotation=[0.0, 0.0, 0.0])
-                servoBody.addObject('FixedProjectiveConstraint', indices=0)
-                servoBody.addObject('UniformMass', totalMass=0.01)
-                
-                
-                articulation = RigidNode.addChild('Articulation')
-                articulation.addObject('MechanicalObject', name='angle', template='Vec1', position=[[-0.4]])
-                articulation.addObject('UniformMass', totalMass=0.01)
-                # articulation.addObject('SinusoidalForceField', indices=0, amplitude=[1], frequency=[1])
-                
-                # articulation.addObject('RestShapeSpringsForceField', points=0, stiffness=1e9)
-                articulation.addObject('ArticulatedHierarchyContainer', printLog=True)
-                
-                servoWheel = articulation.addChild('ServoWheel')
-                servoWheel.addObject('MechanicalObject', name='dofs', template='Rigid3',
-                                     position=[[0, 0., 0., 0., 0., 0., 1.], [0, 0., 0., 0., 0., 0, 1.]],
-                                     showObject=True,
-                                     showObjectScale=5)
-                
-                servoWheel.addObject('ArticulatedSystemMapping',
-                                     input1="@../angle",
-                                     input2="@../../ServoBody/dofs",
-                                     output="@./")
-                                
-                center = articulation.addChild('ArticulationCenter')
-                center.addObject('ArticulationCenter',
-                                  parentIndex=0,
-                                  childIndex=1,
-                                  posOnParent=[0., 0., 0.],
-                                  posOnChild=[0, 0., 0.])
-                
-                center.addObject('Articulation',
-                                  translation=False,
-                                  rotation=True,
-                                  rotationAxis=[0, 1, 0],
-                                  articulationIndex=0)
+
 
                 #RigidNode.addObject("MechanicalObject",template="Rigid3d",name="RigidMesh", position=[[0, 0, Const.Height, 0.23622992, 0.30639972, 0.12644464, 0.91341469]], showObject=True, showObjectScale=5) # orientation is 240 deg away from scene origin
                 
@@ -432,7 +393,7 @@ def createScene(rootNode):
                     CurrentPose = center + [0,0,0,1]
                     nominal_pose += CurrentPose
                     
-                    
+                
       
                 RigidMO = RigidNode.addObject("MechanicalObject",template="Rigid3d",name="RigidMesh", position=nominal_pose, showObject=True, showObjectScale=2) # orientation is 240 deg away from scene origin
 

@@ -83,7 +83,6 @@ factory.cut([BoxDimTag], [triangle_vol])
 
 
 
-
 gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", 0.1)
 synchronize()   
 gmsh.model.mesh.generate(2)
