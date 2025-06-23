@@ -25,6 +25,37 @@ MeshesPath = os.path.dirname(os.path.abspath(__file__))+'/Geometries/'
 GeneratedMeshesPath = os.path.dirname(os.path.abspath(__file__))+'/Geometries/'
 TempPath = os.path.dirname(os.path.abspath(__file__))+'/Temp/'
 
+
+def CalcularB(Distancia_r_mm,Direccion_momento_magnetico,mu_mag_delGráfico): #
+            # Definición de variables
+            Distancia_r = np.array(Distancia_r_mm)
+            length_r = np.linalg.norm(Distancia_r) 
+            # print("length_r", length_r)
+            r_hat = Distancia_r / length_r
+            # print("r_hat",r_hat)
+            
+            Mu_hat = Direccion_momento_magnetico  # Dirección del momento magnético (vector unitario)
+
+        # ······························································
+            # Rotación (Definir rotación en CalcularB(x,Direccion_momento_magnetico,x), no comentandolo)··········································
+        # ······························································
+            # Mu_hat = mu/np.linalg.norm(mu)
+            # mu = Mu_hat * mu_mag_delGráfico
+
+            mu = [x * mu_mag_delGráfico for x in Mu_hat]
+            # Producto tensorial r_hat * r_hat^T
+            AAA = (3 * np.outer(r_hat, r_hat)) - np.identity(3)
+            # Primero multiplicamos AAA por Mu_hat, y luego por mu
+            numerador = np.matmul(AAA, mu) 
+            denominador = 4 * np.pi * (abs(length_r)**3)
+            # Campo magnético B (vector)
+            Campo_Magnetico_resultado = numerador / denominador  # a 40mm deberia marcar 400
+            Campo_Magnetico_resultado = Campo_Magnetico_resultado * 1000000000000000
+            
+            return Campo_Magnetico_resultado
+
+
+
 class Controller(Sofa.Core.Controller):   
     
     def __init__(self, *args, **kwargs):
@@ -42,36 +73,74 @@ class Controller(Sofa.Core.Controller):
 
     def MoveCFFSphereROI(self):   
         x = 10 * np.sin(self.t * 0.05) 
-        y = 5 
+        y = -5 
         z = 3 
         self.CFFSphereROI.centers = [[x, y, z]]  
         self.t += 1  
         
-    def mapCapCoordinatesTo3DCoords(self):
-        WeightList = np.loadtxt("Touch/WeightList.txt")
-        print(f"WeightList: {WeightList}")
-        IdxList = np.loadtxt("Touch/IdxList.txt", dtype ='int')
-        print(f"IdxList: {IdxList}")
-
-        Vsum = np.sum(WeightList)
-        Sum = np.array([0,0,0])
-        for (i,Idx) in enumerate(IdxList):
-            LinearIdx = Idx[0]* 10  + Idx[1]
-            print(f"LinearIdx: {LinearIdx}")
-            Wi = WeightList[i]/Vsum
-            Coords3D =  np.array(ContactNodeMO.position.value[LinearIdx]* Wi)
-            Sum = Sum + Coords3D        
-        self.CFFSphereROI.centers = [Sum]
-        print("SUM", Sum)
 
     def onAnimateBeginEvent(self, eventType):
         self.MoveCFFSphereROI()
         # self.onKeypressedEvent()
         # self.mapCapCoordinatesTo3DCoords()
-        self.CFF.totalForce.value = [0,0,-80000]
+        self.CFF.totalForce.value = [0,0,-200000]
+        np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value[1:, :])
+        print(f"MagnetPose: {self.RigidMO.position.value}")       
+        
+        
+        
         np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value)
         print(f"MagnetPose: {self.RigidMO.position.value}")       
         
+        
+        MagnetPose = []
+        MagnetPose = np.array(MagnetPose)
+        try: 
+            MagnetPose = np.loadtxt("MagnetPose_Direct.txt")
+        except:
+            print("error leyendo los datos desde archivo")
+        print("MagnetPose(Recibido desde Direct) ",MagnetPose)
+        
+        
+        MagnetPosition = self.RigidMO.position.value[1:, :3]
+        print('Lista imanes:', MagnetPosition)
+    
+        if not hasattr(self, 'Lista_sensores'):
+            self.SensorPosition = MagnetPosition.copy()
+            self.SensorPosition[:, 2] -= Const.DeltaPositionSensor
+
+       
+        print('Posicion sensores :', self.SensorPosition)
+    
+        SensorPosition = self.SensorPosition.copy()
+        
+        
+        GlobalMagneticField = []
+
+        for j in range(Const.NMagnets):
+            LocalMagneticField = []
+            Dist_Sensor = SensorPosition[j] - MagnetPosition
+            # print(f'Distancia sensor {j} - imanes:', Dist_Sensor)
+        
+            for i in range(Const.NMagnets):
+                
+                # pos_iman = Lista_imanes[i]
+                quat_iman = self.RigidMO.position.value[i+1, 3:7]
+                # print(f"i : {i}, quat_iman{quat_iman} ")
+                MiR = R.from_quat(quat_iman)  # (x, y, z, w)
+    
+                rotation_Matrix = MiR.as_matrix() 
+                # print("rotation_Matrixxxxxxxxxxxxxxx: ", rotation_Matrix)
+                Direccion_momento_magnetico = [rotation_Matrix[0, 2], rotation_Matrix[1, 2], rotation_Matrix[2, 2]]
+                # print("Direccion momento magnetico: ", Direccion_momento_magnetico)
+                # print("Calcularb: ",CalcularB(Dist_Sensor[i], Direccion_momento_magnetico, Const.mu_mag_delGráfico))
+                LocalMagneticField.append(CalcularB(Dist_Sensor[i], Direccion_momento_magnetico, Const.mu_mag_delGráfico))
+            # print("campo_local: ", len(campo_local)) 
+            TotalMagneticField = np.sum(LocalMagneticField, axis=0)
+            GlobalMagneticField.append(TotalMagneticField)
+            print(f"campototal sensor {j}", TotalMagneticField)
+            
+        np.savetxt("campo_global.txt", GlobalMagneticField)
         
         
 def createScene(rootNode):
@@ -194,7 +263,8 @@ def createScene(rootNode):
 
     # ---- Articulation angle: 1 DOF rotation  ----
     articulationAngle = scene.Simulation.addChild('Articulation')
-    articulationAngle.addObject('MechanicalObject', name='dofs', template='Vec1', position=[[0]], rest_position=[[0.9]])
+    articulationAngle.addObject('MechanicalObject', name='dofs', template='Vec1', position=[[0]],
+                                rest_position=[[Const.ArticulationAngle]])
     articulationAngle.addObject('RestShapeSpringsForceField', points=0, stiffness=1e9)
     articulationAngle.addObject('UniformMass', totalMass=0.01)
 
@@ -330,7 +400,7 @@ def createScene(rootNode):
     CFFNode = model.addChild('CFFNode')
     CFFNode.addObject('MeshSTLLoader', filename=SurfaceMeshPath, name="loader")
     CFFMO = CFFNode.addObject('MechanicalObject', position='@loader.position') 
-    CFFSphereROI = CFFNode.addObject('SphereROI', template="Vec3d", name='CFFSphereROI', centers=[[0,0,3]], radii=[1.25], drawSphere=True)
+    CFFSphereROI = CFFNode.addObject('SphereROI', template="Vec3d", name='CFFSphereROI', centers=[[0,0,2.9]], radii=[1.25], drawSphere=True)
     CFFSphereROI.init()                
     CFF = CFFNode.addObject('ConstantForceField', name='CFF', template='Vec3', indices='@CFFSphereROI.indices', totalForce=[0, 0, 0]) #, showDirection=True, showVisuScale=10)                               
     CFFNode.addObject("BarycentricMapping")

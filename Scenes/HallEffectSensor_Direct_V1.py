@@ -173,29 +173,29 @@ def createScene(rootNode):
                 rootNode.addObject('BackgroundSetting', color='0.85 0.85 0.85')
                 root = Sofa.Core.Node()
 
-                # Carga de plugins necesarios
-                root.addObject('RequiredPlugin', name='Sofa.Component.AnimationLoop')
-                root.addObject('RequiredPlugin', name='Sofa.Component.Constraint.Lagrangian.Correction')
-                root.addObject('RequiredPlugin', name='Sofa.Component.Constraint.Lagrangian.Solver')
-                root.addObject('RequiredPlugin', name='Sofa.Component.Constraint.Projective')
-                root.addObject('RequiredPlugin', name='Sofa.Component.Engine.Select')
-                root.addObject('RequiredPlugin', name='Sofa.Component.IO.Mesh')
-                root.addObject('RequiredPlugin', name='Sofa.Component.LinearSolver.Direct')
-                root.addObject('RequiredPlugin', name='Sofa.Component.LinearSolver.Iterative')
-                root.addObject('RequiredPlugin', name='Sofa.Component.Mapping.Linear')
-                root.addObject('RequiredPlugin', name='Sofa.Component.Mapping.NonLinear')
-                root.addObject('RequiredPlugin', name='Sofa.Component.Mass')
-                root.addObject('RequiredPlugin', name='Sofa.Component.MechanicalLoad')
-                root.addObject('RequiredPlugin', name='Sofa.Component.ODESolver.Backward')
-                root.addObject('RequiredPlugin', name='Sofa.Component.Setting')
-                root.addObject('RequiredPlugin', name='Sofa.Component.SolidMechanics.FEM.Elastic')
-                root.addObject('RequiredPlugin', name='Sofa.Component.SolidMechanics.Spring')
-                root.addObject('RequiredPlugin', name='Sofa.Component.StateContainer')
-                root.addObject('RequiredPlugin', name='Sofa.Component.Topology.Container.Constant')
-                root.addObject('RequiredPlugin', name='Sofa.Component.Topology.Container.Dynamic')
-                root.addObject('RequiredPlugin', name='Sofa.Component.Visual')
-                root.addObject('RequiredPlugin', name='Sofa.GL.Component.Rendering3D')
-                root.addObject('RequiredPlugin', name='Sofa.GL.Component.Shader')
+                # # Carga de plugins necesarios
+                # root.addObject('RequiredPlugin', name='Sofa.Component.AnimationLoop')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.Constraint.Lagrangian.Correction')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.Constraint.Lagrangian.Solver')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.Constraint.Projective')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.Engine.Select')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.IO.Mesh')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.LinearSolver.Direct')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.LinearSolver.Iterative')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.Mapping.Linear')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.Mapping.NonLinear')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.Mass')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.MechanicalLoad')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.ODESolver.Backward')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.Setting')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.SolidMechanics.FEM.Elastic')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.SolidMechanics.Spring')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.StateContainer')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.Topology.Container.Constant')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.Topology.Container.Dynamic')
+                # root.addObject('RequiredPlugin', name='Sofa.Component.Visual')
+                # root.addObject('RequiredPlugin', name='Sofa.GL.Component.Rendering3D')
+                # root.addObject('RequiredPlugin', name='Sofa.GL.Component.Shader')
 
          
                 rootNode.addObject('LightManager')
@@ -390,7 +390,7 @@ def createScene(rootNode):
                 nominal_pose = [] 
                 for center in Const.MagnetCenters:
                     # CurrentPose = [Const.MagnetCenters[i],Const.MagnetCenters[i],Const.MagnetCenters[i], 0,0,0,1]
-                    CurrentPose = center + [0,0,0,1]
+                    CurrentPose = center + TipOrientation
                     nominal_pose += CurrentPose
                     
                 

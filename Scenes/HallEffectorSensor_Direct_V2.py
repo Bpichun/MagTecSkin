@@ -65,21 +65,34 @@ class Controller(Sofa.Core.Controller):
         Sofa.Core.Controller.__init__(self, *args, **kwargs)
         print(" Python::__init__::" + str(self.name.value))
                
+        # self.RootNode = kwargs['RootNode']
+        # #self.PositionEffector = kwargs['PositionEffector']
+        # self.RigidMO = kwargs['RigidMO']
+        # self.CFF = kwargs['CFF']
+        # # self.CFFDiskROI = kwargs["CFFDiskROI"]
+        # # self.roi_loader = self.CFFDiskROI.getContext().getObject("ROIloader")
+        # self.ForceVector = np.array([0,0,0])
+        # self.InitialGoalPosition = self.ForceVector
+        # print(kwargs['RootNode'])
+        # self.ModelNode = self.RootNode.solverNode.deformableNode.model        
+        # self.t = 0
+
+        # print('Finished Init')
+        
         self.RootNode = kwargs['RootNode']
         #self.PositionEffector = kwargs['PositionEffector']
         self.RigidMO = kwargs['RigidMO']
         self.CFF = kwargs['CFF']
-        self.CFFDiskROI = kwargs["CFFDiskROI"]
-        # self.roi_loader = self.CFFDiskROI.getContext().getObject("ROIloader")
-        self.ForceVector = np.array([0,0,0])
-        self.InitialGoalPosition = self.ForceVector
+        self.CFFSphereROI = kwargs['CFFSphereROI']
+        # self.ForceVector = np.array([0,0,0])
+        # self.InitialGoalPosition = self.ForceVector
+
+
         print(kwargs['RootNode'])
-        self.ModelNode = self.RootNode.solverNode.deformableNode.model        
-        self.t = 0
-
-        print('Finished Init')
         
-
+        # self.ModelNode = self.RootNode.solverNode.deformableNode.model        
+        self.t = 0
+        # print('F
         
     def onKeypressedEvent(self, c):
         key = c['key']        
@@ -141,88 +154,93 @@ class Controller(Sofa.Core.Controller):
         
         
         
+   
     def MoveCFFSphereROI(self):   
-        x = 12 * np.sin(self.t * 0.03) 
-        y = 5 #* np.sin(self.t * 0.03) 
-        z = 2.8
-        
-           
-        # self.CFFDiskROI.translation = [[x, y, z]]  
-        # self.CFFDiskROI.centers = [[x, y, z]]  
+        x = 10 * np.sin(self.t * 0.05) 
+        y = 5 
+        z = 3 
+        self.CFFSphereROI.centers = [[x, y, z]]  
         self.t += 1  
    
-  
+    def onAnimateBeginEvent(self, eventType):
+        self.MoveCFFSphereROI()
+        # self.onKeypressedEvent()
+        # self.mapCapCoordinatesTo3DCoords()
+        self.CFF.totalForce.value = [0,0,-300000]
+        np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value)
+        print(f"MagnetPose: {self.RigidMO.position.value}")       
+        
     
-    def MoveCFFDiskROI(self):
-        self.t += 1
-        new_translation = [12 * np.sin(self.t * 0.03), 5, 2.0]
-        self.roi_loader.translation = new_translation
-        # self.mesh_roi.doUpdate.value = True
-        self.CFF.totalForce.value = [0,0,-20000]
-        self.CFFDiskROI.doUpdate.value = True
+    # def MoveCFFDiskROI(self):
+    #     self.t += 1
+    #     new_translation = [12 * np.sin(self.t * 0.03), 5, 2.0]
+    #     self.roi_loader.translation = new_translation
+    #     # self.mesh_roi.doUpdate.value = True
+    #     self.CFF.totalForce.value = [0,0,-20000]
+    #     self.CFFDiskROI.doUpdate.value = True
 
     # def onAnimateBeginEvent(self, eventType):
     #     self.MoveCFFDiskROI() 
-        # self.CFFDiskROI.doUpdate.value = True
-        # print("ROI indices:", self.CFFDiskROI.indices.value)
-        # print("ROI translation:", self.roi_loader.translation)
-        # print("ROI indices:", self.CFFDiskROI.indices.value)
-        # self.MoveCFFSphereROI()
-        # # self.onKeypressedEvent()
-        # # self.mapCapCoordinatesTo3DCoords()
-        # self.CFF.totalForce.value = [0,0,-200000000]
-        # np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value)
-        # print(f"MagnetPose: {self.RigidMO.position.value}")       
+    #     self.CFFDiskROI.doUpdate.value = True
+    #     # print("ROI indices:", self.CFFDiskROI.indices.value)
+    #     print("ROI translation:", self.roi_loader.translation)
+    #     # print("ROI indices:", self.CFFDiskROI.indices.value)
+    #     self.MoveCFFSphereROI()
+    #     # self.onKeypressedEvent()
+    #     # self.mapCapCoordinatesTo3DCoords()
+    #     self.CFF.totalForce.value = [0,0,-2000000000]
+    #     np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value)
+    #     print(f"MagnetPose: {self.RigidMO.position.value}")       
         
         
-        # MagnetPose = []
-        # MagnetPose = np.array(MagnetPose)
-        # try: 
-        #     MagnetPose = np.loadtxt("MagnetPose_Direct.txt")
-        # except:
-        #     print("error leyendo los datos desde archivo")
-        # print("MagnetPose(Recibido desde Direct) ",MagnetPose)
+    #     MagnetPose = []
+    #     MagnetPose = np.array(MagnetPose)
+    #     try: 
+    #         MagnetPose = np.loadtxt("MagnetPose_Direct.txt")
+    #     except:
+    #         print("error leyendo los datos desde archivo")
+    #     print("MagnetPose(Recibido desde Direct) ",MagnetPose)
         
         
-        # MagnetPosition = self.RigidMO.position.value[:, :3]
-        # print('Lista imanes:', MagnetPosition)
+    #     MagnetPosition = self.RigidMO.position.value[:, :3]
+    #     print('Lista imanes:', MagnetPosition)
     
-        # if not hasattr(self, 'Lista_sensores'):
-        #     self.SensorPosition = MagnetPosition.copy()
-        #     self.SensorPosition[:, 2] -= Const.DeltaPositionSensor
+    #     if not hasattr(self, 'Lista_sensores'):
+    #         self.SensorPosition = MagnetPosition.copy()
+    #         self.SensorPosition[:, 2] -= Const.DeltaPositionSensor
 
        
-        # print('Posicion sensores :', self.SensorPosition)
+    #     print('Posicion sensores :', self.SensorPosition)
     
-        # SensorPosition = self.SensorPosition.copy()
+    #     SensorPosition = self.SensorPosition.copy()
         
         
-        # GlobalMagneticField = []
+    #     GlobalMagneticField = []
 
-        # for j in range(Const.NMagnets):
-        #     LocalMagneticField = []
-        #     Dist_Sensor = SensorPosition[j] - MagnetPosition
-        #     # print(f'Distancia sensor {j} - imanes:', Dist_Sensor)
+    #     for j in range(Const.NMagnets):
+    #         LocalMagneticField = []
+    #         Dist_Sensor = SensorPosition[j] - MagnetPosition
+    #         # print(f'Distancia sensor {j} - imanes:', Dist_Sensor)
         
-        #     for i in range(Const.NMagnets):
+    #         for i in range(Const.NMagnets):
                 
-        #         # pos_iman = Lista_imanes[i]
-        #         quat_iman = self.RigidMO.position.value[i, 3:7]
-        #         # print(f"i : {i}, quat_iman{quat_iman} ")
-        #         MiR = R.from_quat(quat_iman)  # (x, y, z, w)
+    #             # pos_iman = Lista_imanes[i]
+    #             quat_iman = self.RigidMO.position.value[i, 3:7]
+    #             # print(f"i : {i}, quat_iman{quat_iman} ")
+    #             MiR = R.from_quat(quat_iman)  # (x, y, z, w)
     
-        #         rotation_Matrix = MiR.as_matrix() 
-        #         # print("rotation_Matrixxxxxxxxxxxxxxx: ", rotation_Matrix)
-        #         Direccion_momento_magnetico = [rotation_Matrix[0, 2], rotation_Matrix[1, 2], rotation_Matrix[2, 2]]
-        #         # print("Direccion momento magnetico: ", Direccion_momento_magnetico)
-        #         # print("Calcularb: ",CalcularB(Dist_Sensor[i], Direccion_momento_magnetico, Const.mu_mag_delGráfico))
-        #         LocalMagneticField.append(CalcularB(Dist_Sensor[i], Direccion_momento_magnetico, Const.mu_mag_delGráfico))
-        #     # print("campo_local: ", len(campo_local)) 
-        #     TotalMagneticField = np.sum(LocalMagneticField, axis=0)
-        #     GlobalMagneticField.append(TotalMagneticField)
-        #     print(f"campototal sensor {j}", TotalMagneticField)
+    #             rotation_Matrix = MiR.as_matrix() 
+    #             # print("rotation_Matrixxxxxxxxxxxxxxx: ", rotation_Matrix)
+    #             Direccion_momento_magnetico = [rotation_Matrix[0, 2], rotation_Matrix[1, 2], rotation_Matrix[2, 2]]
+    #             # print("Direccion momento magnetico: ", Direccion_momento_magnetico)
+    #             # print("Calcularb: ",CalcularB(Dist_Sensor[i], Direccion_momento_magnetico, Const.mu_mag_delGráfico))
+    #             LocalMagneticField.append(CalcularB(Dist_Sensor[i], Direccion_momento_magnetico, Const.mu_mag_delGráfico))
+    #         # print("campo_local: ", len(campo_local)) 
+    #         TotalMagneticField = np.sum(LocalMagneticField, axis=0)
+    #         GlobalMagneticField.append(TotalMagneticField)
+    #         print(f"campototal sensor {j}", TotalMagneticField)
             
-        # np.savetxt("campo_global.txt", GlobalMagneticField)
+    #     np.savetxt("campo_global.txt", GlobalMagneticField)
         
         # print("---------------------------------------------------------------")
 
@@ -251,7 +269,10 @@ class Controller(Sofa.Core.Controller):
         # Dist_Sensor1 =  Lista_sensores_[0] - Lista_imanes
         # # Diff_Sensor_Iman = Lista_imanes - Lista_sensores
         # #DistSensor1 se entrega a calculoB, y se suman los n campos magneticos
-               
+     
+
+
+          
 def createScene(rootNode):
                 
                 # global Lista_sensores
@@ -602,91 +623,61 @@ def createScene(rootNode):
 #                CFFNode.addObject("IdentityMapping")
 
                 ############################################################ init prueba
-                # #FPA on deformable!
-                # CFFNode = model.addChild('CFFNode')
-                # CFFNode.addObject('MeshSTLLoader', filename=SurfaceMeshPath, name="loader")
-                # # CFFNode.addObject('MeshSTLLoader', filename="Geometries/disk.stl", name="diskLoader")
+                #FPA on deformable!
+                CFFNode = model.addChild('CFFNode')
+                CFFNode.addObject('MeshSTLLoader', filename=SurfaceMeshPath, name="loader")
+                
+                CFFMO = CFFNode.addObject('MechanicalObject', position='@loader.position') #position=[[1, -7.4, 2.3],[3.7, -7.4, 2.9],[6.4, -7.4, 2.3]], showObject=True, showObjectScale=20, showColor=[0,1,0])
+                # # CFFSphereCenters = [[1, -8.4, 2.1],[3.7, -8.4, 2.6],[5.4, -8.4, 2.3]]
+                # CFFSphereCenters = [[3.5, -6.5, 2.7],[3.7, -8.4, 2.6],[5.4, -8.4, 2.3]]
+                # CenterIdx = 0
+                CFFSphereROI = CFFNode.addObject('SphereROI', template="Vec3d", name='CFFSphereROI', centers=[[0,0,3]], radii=[1.25], drawSphere=True)
+                CFFSphereROI.init()                
+                CFF = CFFNode.addObject('ConstantForceField', name='CFF1', template='Vec3', indices='@CFFSphereROI.indices', totalForce=[0, 0, -100000000]) #, showDirection=True, showVisuScale=10)                               
+                CFFNode.addObject("BarycentricMapping")
+                
+                # MarkerNode = model.addChild('MarkerNode')
+                # MarkerMO = MarkerNode.addObject('MechanicalObject', position=[[0,0,0]], showObject=True, showObjectScale=20, showColor=[0,1,0])
+                # MarkerNode.addObject('BarycentricMapping')
+   
+                
+                rootNode.addObject(Controller(name="ActuationController", RootNode=rootNode, RigidMO=RigidMO,
+                                              CFF=CFF,
+                                              CFFSphereROI=CFFSphereROI))  
 
-                
-                # CFFMO = CFFNode.addObject('MechanicalObject', position='@loader.position') #position=[[1, -7.4, 2.3],[3.7, -7.4, 2.9],[6.4, -7.4, 2.3]], showObject=True, showObjectScale=20, showColor=[0,1,0])
-                # # # CFFSphereCenters = [[1, -8.4, 2.1],[3.7, -8.4, 2.6],[5.4, -8.4, 2.3]]
-                # # CFFSphereCenters = [[3.5, -6.5, 2.7],[3.7, -8.4, 2.6],[5.4, -8.4, 2.3]]
-                # # CenterIdx = 0
-                # CFFSphereROI = CFFNode.addObject('SphereROI', template="Vec3d", name='CFFSphereROI', centers=[[0,0,3]], radii=[2], drawSphere=False)
-                # # CFFNode.addObject('MeshROI', name="ROIm", drawBox="0", drawEdges="0", drawTriangles="1", drawTetrahedra="1", drawOut="0", computeMeshROI="1", doUpdate="0", position="@../mecaObj.position", tetrahedra="@../loader.tetrahedra", ROIposition="@ROIloader.position", ROItriangles="@ROIloader.triangles")
-                # # CFFSphereROI = CFFNode.addObject('BoxROI',name='CFFCircleROI11', box=[-2, -2, 2.95, 2, 2, 3.05], drawBoxes=True)
-                
-                # # boxTip = completeMesh.addObject('BoxROI', name='Tip'+str(i), box=[Const.MagnetBoxCoords[i]], drawBoxes=True, tetrahedra="@container.tetrahedra" , position="@container.position")
-
-
-
-
-                
-                
-                
-                # CFFSphereROI.init()                
-                # CFF = CFFNode.addObject('ConstantForceField', name='CFF1', template='Vec3', indices='@CFFSphereROI.indices', totalForce=[0, 0, 0]) #, showDirection=True, showVisuScale=10)                               
-                # CFFNode.addObject("BarycentricMapping")
-                
-                
                 ############################################################ end prueba 
                 
                 
                 # # --------------------------------------- DISK-----------------------------------------
-       
-                # DiskROI = model.addChild('CFFDiskROI')
+                                                   
+                # mesh_roi = model.addChild('MeshROI')
 
-                # DiskROI.addObject('MeshSTLLoader', name="ROIloader", filename='Geometries/Disk.stl', scale3d="1 1 1", translation="10 0 0", rotation="0 0 0")
-                # CFFDiskROI= DiskROI.addObject('MeshROI', name="ROIm", drawBox="0", drawEdges="0", drawTriangles="0", drawTetrahedra="0", drawOut="0", computeMeshROI="1", doUpdate="0", position="@../loader.position", tetrahedra="@../loader.tetrahedra", ROIposition="@ROIloader.position", ROItriangles="@ROIloader.triangles", drawROI=True)
-                # # model.addObject('BoxROI', name='FixingBox', box=[-(Const.RigidSectionWidth/2+Margin), -(Increment * i) + Margin, -(Const.RigidSectionDepth/2+Margin), Const.RigidSectionWidth/2+Margin, -(Increment * i + Const.RigidSectionHeight + Margin), Const.RigidSectionDepth/2 + Margin], drawBoxes=True, position="@tetras.rest_position", tetrahedra="@container.tetrahedra")
-                
-                # CFFDiskROI.init()
-                # CFF = CFFDiskROI.addObject('ConstantForceField', name='CFF1', template='Vec3', 
-                #                         indices='@CFFDiskROI.indices', totalForce=[0, 0, -1000000])
-                
-                # CFFDiskROI.addObject("BarycentricMapping")
-                
-                # mesh_roi = completeMesh.addChild('MeshROI')   
-                
-
-                # diskNode = model.addChild("diskNode")
-                
-                # diskNode.addObject("MechanicalObject", name="DOFs", template="Rigid3", position=[0, 0, 2.0])
-                
-                # stl = diskNode.addObject("MeshSTLLoader", name="loader", filename="Geometries/Disk.stl")
-                
-                # diskNode.addObject("RigidMapping", input="@DOFs", output="@loader")
-    
-    
-                                                 
-                mesh_roi = model.addChild('MeshROI')
-
-                mesh_roi.addObject('MeshSTLLoader', 
-                                   name="ROIloader", 
-                                   filename='Geometries/Disk.stl', 
-                                   scale3d="1 1 1", 
-                                   translation ='1, 1, 5',
-                                   rotation="0 0 0")
+                # mesh_roi.addObject('MeshSTLLoader', 
+                #                    name="ROIloader", 
+                #                    filename='Geometries/Disk.stl', 
+                #                    scale3d="1 1 1", 
+                #                    translation ='1, 1, 5',
+                #                    rotation="0 0 0")
                 
                 
-                CFFDiskROI = mesh_roi.addObject('MeshROI',
-                                                name="ROIm", 
-                                                drawBox="0", 
-                                                drawEdges="1", 
-                                                drawPoints = '1', 
-                                                drawTriangles="0", 
-                                                drawTetrahedra="0", 
-                                                drawOut="1", 
-                                                computeMeshROI="1", 
-                                                doUpdate="1", 
-                                                position="@../tetras.position", 
-                                                tetrahedra="@../loader.tetrahedra",
-                                                ROIposition="@ROIloader.position", 
-                                                ROItriangles="@ROIloader.triangles", 
-                                                drawROI=True)
+                # CFFDiskROI = mesh_roi.addObject('MeshROI',
+                #                                 name="ROIm", 
+                #                                 drawBox="0", 
+                #                                 drawEdges="1", 
+                #                                 drawPoints = '1', 
+                #                                 drawTriangles="0", 
+                #                                 drawTetrahedra="0", 
+                #                                 drawOut="1", 
+                #                                 computeMeshROI="1", 
+                #                                 doUpdate="1", 
+                #                                 position="@../tetras.position", 
+                #                                 tetrahedra="@../loader.tetrahedra",
+                #                                 ROIposition="@ROIloader.position", 
+                #                                 ROItriangles="@ROIloader.triangles", 
+                #                                 drawROI=True)
                 
-                # CFFDiskROI.init()
-                CFF = model.addObject('ConstantForceField', indices='@MeshROI/ROIm.indices', totalForce=[0, 0,  -20000])           
+                # # CFFDiskROI.init()
+                # CFF = model.addObject('ConstantForceField', indices='@MeshROI/ROIm.indices', totalForce=[0, 0,  -20000])           
                                
                
 
@@ -701,3 +692,390 @@ def createScene(rootNode):
 
 
                 return rootNode
+            
+            
+            
+            
+            
+            
+            
+"""
+
+import Sofa
+import os
+import numpy as np
+from scipy.spatial.transform import Rotation as R 
+#from stlib.physics.deformable import ElasticMaterialObject
+#from stlib.physics.constraints import FixedBox
+#from stlib.physics.collision import CollisionMesh
+
+
+#from stlib.visuals import VisualModel
+
+#from softrobots.actuators import PneumaticCavity
+#from softrobots.actuators import VolumeEffector
+#from softrobots.sensors  import PneumaticSensor
+path = os.path.dirname(os.path.abspath(__file__))+'/Meshes/'
+MeshesPath = os.path.dirname(os.path.abspath(__file__))+'/Geometries/'
+GeneratedMeshesPath = os.path.dirname(os.path.abspath(__file__))+'/Geometries/'
+
+TempPath = os.path.dirname(os.path.abspath(__file__))+'/Temp/'
+
+import Geometries.Constants as Const
+import rigidification
+
+
+def CalcularB(Distancia_r_mm,Direccion_momento_magnetico,mu_mag_delGráfico): #
+            # Definición de variables
+            Distancia_r = np.array(Distancia_r_mm)
+            length_r = np.linalg.norm(Distancia_r) 
+            # print("length_r", length_r)
+            r_hat = Distancia_r / length_r
+            # print("r_hat",r_hat)
+            
+            Mu_hat = Direccion_momento_magnetico  # Dirección del momento magnético (vector unitario)
+
+        # ······························································
+            # Rotación (Definir rotación en CalcularB(x,Direccion_momento_magnetico,x), no comentandolo)··········································
+        # ······························································
+            # Mu_hat = mu/np.linalg.norm(mu)
+            # mu = Mu_hat * mu_mag_delGráfico
+
+            mu = [x * mu_mag_delGráfico for x in Mu_hat]
+            # Producto tensorial r_hat * r_hat^T
+            AAA = (3 * np.outer(r_hat, r_hat)) - np.identity(3)
+            # Primero multiplicamos AAA por Mu_hat, y luego por mu
+            numerador = np.matmul(AAA, mu) 
+            denominador = 4 * np.pi * (abs(length_r)**3)
+            # Campo magnético B (vector)
+            Campo_Magnetico_resultado = numerador / denominador  # a 40mm deberia marcar 400
+            Campo_Magnetico_resultado = Campo_Magnetico_resultado * 1000000000000000
+            return Campo_Magnetico_resultado
+        
+        
+
+class Controller(Sofa.Core.Controller):   
+    
+    def __init__(self, *args, **kwargs):
+        Sofa.Core.Controller.__init__(self, *args, **kwargs)
+        print(" Python::__init__::" + str(self.name.value))
+        self.RigidMO = kwargs['RigidMO']
+        self.CFF = kwargs['CFF']
+        self.CFFSphereROI = kwargs['CFFSphereROI']
+        self.t = 0
+
+
+        
+    def MoveCFFSphereROI(self):   
+        x = 10 * np.sin(self.t * 0.05) 
+        y = -5 
+        z = 3 
+        self.CFFSphereROI.centers = [[x, y, z]]  
+        self.t += 1  
+   
+
+        
+    def onAnimateBeginEvent(self, eventType):
+
+        self.MoveCFFSphereROI()
+        self.CFF.totalForce.value = [0,0,-200000]
+        np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value)
+        
+        MagnetPose = []
+        MagnetPose = np.array(MagnetPose)
+        try: 
+            MagnetPose = np.loadtxt("MagnetPose_Direct.txt")
+        except:
+            print("error leyendo los datos desde archivo")
+        print("MagnetPose(Recibido desde Direct) ",MagnetPose)
+        
+        
+        MagnetPosition = self.RigidMO.position.value[:, :3]
+        # print('Lista imanes:', MagnetPosition)
+    
+        if not hasattr(self, 'Lista_sensores'):
+            self.SensorPosition = MagnetPosition.copy()
+            self.SensorPosition[:, 2] -= Const.DeltaPositionSensor
+
+       
+        # print('Posicion sensores :', self.SensorPosition)
+    
+        SensorPosition = self.SensorPosition.copy()
+        
+        
+        GlobalMagneticField = []
+
+        for j in range(Const.NMagnets):
+            LocalMagneticField = []
+            Dist_Sensor = SensorPosition[j] - MagnetPosition
+            # print(f'Distancia sensor {j} - imanes:', Dist_Sensor)
+        
+            for i in range(Const.NMagnets):
+                
+                # pos_iman = Lista_imanes[i]
+                quat_iman = self.RigidMO.position.value[i, 3:7]
+                # print(f"i : {i}, quat_iman{quat_iman} ")
+                MiR = R.from_quat(quat_iman)  # (x, y, z, w)
+    
+                rotation_Matrix = MiR.as_matrix() 
+                # print("rotation_Matrixxxxxxxxxxxxxxx: ", rotation_Matrix)
+                Direccion_momento_magnetico = [rotation_Matrix[0, 2], rotation_Matrix[1, 2], rotation_Matrix[2, 2]]
+                # print("Direccion momento magnetico: ", Direccion_momento_magnetico)
+                # print("Calcularb: ",CalcularB(Dist_Sensor[i], Direccion_momento_magnetico, Const.mu_mag_delGráfico))
+                LocalMagneticField.append(CalcularB(Dist_Sensor[i], Direccion_momento_magnetico, Const.mu_mag_delGráfico))
+            # print("campo_local: ", len(campo_local)) 
+            TotalMagneticField = np.sum(LocalMagneticField, axis=0)
+            GlobalMagneticField.append(TotalMagneticField)
+            # print(f"campototal sensor {j}", TotalMagneticField)
+            
+        np.savetxt("campo_global.txt", GlobalMagneticField)
+        
+        print("---------------------------------------------------------------")
+    
+        
+def createScene(rootNode):
+
+                rootNode.addObject('RequiredPlugin', pluginName='SofaPython3 SoftRobots SoftRobots.Inverse')
+                rootNode.addObject('VisualStyle', displayFlags='hideWireframe showBehaviorModels hideCollisionModels hideBoundingCollisionModels showForceFields showInteractionForceFields')
+                rootNode.addObject('RequiredPlugin', name="ArticulatedSystemPlugin")
+                rootNode.findData('gravity').value = [0, 0, -9810] #
+                #rootNode.findData('gravity').value = [0, 0, -1000] #
+                rootNode.findData('dt').value = 0.02
+
+                rootNode.addObject('FreeMotionAnimationLoop')
+                #rootNode.addObject('QPInverseProblemSolver', printLog='1', epsilon="1e-1", maxIterations="1000", tolerance="1e-5")
+                #rootNode.addObject('QPInverseProblemSolver', printLog=False, epsilon="0.0001", maxIterations="1000", tolerance="1e-5")
+
+                rootNode.addObject('GenericConstraintSolver', tolerance="1e-12", maxIterations="10000")
+
+                #rootNode.addObject('BackgroundSetting', color='0 0.168627 0.211765')
+                rootNode.addObject('BackgroundSetting', color='0.85 0.85 0.85')
+                root = Sofa.Core.Node()
+         
+                rootNode.addObject('LightManager')
+                rootNode.addObject(
+                    "PositionalLight",
+                    name="light1",
+                    color="0.8 0.8 0.8",
+                    position=[0, 0, 10],
+                )
+                rootNode.addObject(
+                    "PositionalLight",
+                    name="light2",
+                    color="0.8 0.8 0.8",
+                    position=[0, 0, -10],
+                )
+                
+
+                #VolumetricMeshPath = GeneratedMeshesPath + 'Cone_Volumetric.vtk'
+                VolumetricMeshPath = GeneratedMeshesPath + 'Sensor.vtk'
+                                
+                      
+                #SurfaceMeshPath = GeneratedMeshesPath + 'Cone_Surface.stl'
+                SurfaceMeshPath = GeneratedMeshesPath + 'Sensor.stl'
+                
+
+                
+                
+                completeMesh = rootNode.addChild('completeMesh')
+                
+                #completeMesh.addObject('RegularGrid',name='hexaGrid', nx="3", ny="3", nz="9", xmin="0", xmax="3", ymin="0", ymax="3", zmin="0", zmax="19")
+                completeMesh.addObject('MeshVTKLoader', name='loader', filename=VolumetricMeshPath)
+                completeMesh.addObject('TetrahedronSetTopologyContainer', src='@loader', name='container')
+                completeMesh.init()
+                MeshTetra = completeMesh.addObject('MeshTopology', name="AllMesh", src='@loader')
+               
+
+                Boxes = []
+                for i in range(len(Const.MagnetBoxCoords)):
+                    boxTip = completeMesh.addObject('BoxROI', name='Tip'+str(i), box=[Const.MagnetBoxCoords[i]], drawBoxes=True, 
+                                                    tetrahedra="@container.tetrahedra" , position="@container.position")
+                    Boxes.append(boxTip)
+                    boxTip.init()
+                  
+                # boxTip = Boxes[-1]
+                
+                
+                
+                positionAllPoints = MeshTetra.findData('position').value;
+                nbPoints = len(positionAllPoints)
+                
+                
+                IndicesWithRigidIdx = np.empty((0,2), dtype=int)
+                
+                for (i,Box) in enumerate(Boxes):
+                    IndicesNP = np.array(Box.indices.value, dtype=int)
+                    NPoints = len(IndicesNP)
+                    RigidIdx = np.ones(NPoints,dtype=int)*i
+                    CurrentIndicesWithRigidIdx = np.append(IndicesNP.reshape((NPoints,1)), RigidIdx.reshape((NPoints,1)),1)
+                    IndicesWithRigidIdx = np.append(IndicesWithRigidIdx, CurrentIndicesWithRigidIdx,0)
+                
+                print(f"IndicesWithRigidIdx: {IndicesWithRigidIdx}")
+                IndicesWithRigidIdxSorted = np.sort(IndicesWithRigidIdx[:,0],0)
+                SortedIdxs = np.argsort(IndicesWithRigidIdx[:,0],0)
+                SortedRigidIdxs = IndicesWithRigidIdx[:,1][SortedIdxs]
+                print(f"SortedRigidIdxs: {SortedRigidIdxs}")
+                
+                
+                indicesTip = IndicesWithRigidIdxSorted.tolist()
+                
+                rigidBlocks = [IndicesWithRigidIdxSorted.tolist()] 
+                
+                DeformableIndicesTotal = []    
+                
+
+                for i in range(nbPoints):
+                    if i not in indicesTip:
+                        DeformableIndicesTotal.append(i)                                 
+
+                freeBlocks = np.sort(DeformableIndicesTotal)    
+                IdxsOrderedFreeBlocks = np.argsort(DeformableIndicesTotal)    
+                
+                
+                
+                # freeBlocks = indicesDeformable
+                print(nbPoints)
+                print('+++++++++++++++++++++++++++++++++++')
+                print(rigidBlocks)
+                print('+++++++++++++++++++++++++++++++++++')
+                print(freeBlocks)
+                print ('+++++++++++++++++++++++++++++++++++')
+#
+                indexPairs = np.array(rigidification.fillIndexPairs(nbPoints,freeBlocks,rigidBlocks))
+                print('indexPairs ')
+                print(indexPairs)
+                print('End of indexPairs ')
+                # pointsBody = np.array(completeMesh.MainBody.pointsInROI.value).flatten().tolist()
+                
+                NPPointsDeformable = positionAllPoints[DeformableIndicesTotal,:]
+                
+                NPSortedPointsDeformable = NPPointsDeformable[IdxsOrderedFreeBlocks, :]
+                PointsDeformable = NPSortedPointsDeformable.flatten().tolist()
+                pointsBody = PointsDeformable
+                #deformablePoints = pointsBody
+                
+                
+                pointsTip = np.array(positionAllPoints[indicesTip,:]).flatten().tolist()                                                
+                
+                
+                rigidIndexPerPoint = SortedRigidIdxs.tolist()
+                # rigidIndexPerPoint = [0] * len(indicesTip)                
+    
+                solverNode = rootNode.addChild("solverNode")
+                solverNode.addObject('EulerImplicitSolver',rayleighStiffness="0.1", rayleighMass="0.1")
+                solverNode.addObject('SparseLDLSolver',name='preconditioner')
+                solverNode.addObject('GenericConstraintCorrection', linearSolver='@preconditioner')
+                # solverNode.addObject('MechanicalMatrixMapper', template='Vec3d,Rigid3d', object1='@./deformableNode/DeformableMech', object2='@./RigidNode/RigidMesh', nodeToParse='@./deformableNode/model' )
+                #solverNode.addObject('MechanicalMatrixMapper', template='Rigid,Rigid', object1='@./RigidNode/RigidMesh', object2='@./RigidNode/RigidMesh', nodeToParse='@./RigidNode/RigidifiedNode', stopAtNodeToParse=True )
+                
+              
+                
+                
+                
+                deformableNode = solverNode.addChild("deformableNode")
+                deformableNode.addObject('PointSetTopologyContainer', position=pointsBody)
+                deformableNode.addObject('MechanicalObject', name='DeformableMech')
+                #deformableNode.addObject('BoxROI', name='BoxForSliding', box=Constants.SlidingBoxCoords, drawBoxes='true')
+                #deformableNode.addObject('PartialFixedConstraint', indices='@BoxForSliding.indices', fixedDirections=[0,0,1])                
+                
+                
+                RigidNode= solverNode.addChild('RigidNode')
+
+                
+                TipOrientation = [0, 0, 0, 1]    
+               
+                nominal_pose = [] 
+                for center in Const.MagnetCenters:
+                    # CurrentPose = [Const.MagnetCenters[i],Const.MagnetCenters[i],Const.MagnetCenters[i], 0,0,0,1]
+                    CurrentPose = center + TipOrientation
+                    nominal_pose += CurrentPose
+                    
+                
+      
+                RigidMO = RigidNode.addObject("MechanicalObject",template="Rigid3d",name="RigidMesh", position=nominal_pose, showObject=True, showObjectScale=2) # orientation is 240 deg away from scene origin
+
+                #RigidNode.addObject('BoxROI', name='BoxForSliding', box=Constants.SlidingBoxCoords, drawBoxes='true')
+                #RigidNode.addObject('PartialFixedConstraint', indices=[0], fixedDirections=[0,0,0,1,1,0])
+             
+                RigidifiedNode= RigidNode.addChild('RigidifiedNode')
+                
+                RigidifiedNode.addObject('MechanicalObject', name='RigidifiedMesh', position = pointsTip, template = 'Vec3d', showObject = True, showObjectScale = 10, showColor = 1)
+                
+                RigidifiedNode.addObject("RigidMapping",globalToLocalCoords="true", rigidIndexPerPoint=rigidIndexPerPoint)  
+                
+                model = deformableNode.addChild('model')
+                RigidifiedNode.addChild(model)
+                
+                	#Heart
+                model.addObject('EulerImplicitSolver', name='odesolver')
+                #model.addObject('ShewchukPCGLinearSolver', iterations='15', name='linearsolver', tolerance='1e-5', preconditioners='preconditioner', use_precond=True, update_step='1')
+                model.addObject('ShewchukPCGLinearSolver', iterations='15', name='linearsolver', tolerance='1e-5', update_step='1')
+    
+                model.addObject('MeshVTKLoader', name='loader', filename=VolumetricMeshPath)
+                model.addObject('TetrahedronSetTopologyContainer', src='@loader', name='container')
+
+                model.addObject('MechanicalObject', name='tetras', template='Vec3', showIndices=False, showIndicesScale='4e-5', rx='0', dz='0')
+                model.addObject('UniformMass', totalMass='0.09')
+                model.addObject('TetrahedronFEMForceField', template='Vec3', name='FEM', method='large', poissonRatio=Const.PoissonRatio,  youngModulus=Const.YoungsModulus)
+
+                # model.addObject('BoxROI', name='boxROI', box=Const.BaseFixedBoxCoords, drawBoxes=True, position="@tetras.rest_position", tetrahedra="@container.tetrahedra")
+                
+                model.addObject('BoxROI', name='boxROI', box=Const.BoxROIFixCoords, drawBoxes=True, position="@tetras.rest_position", tetrahedra="@container.tetrahedra")
+
+                
+                
+                
+                model.addObject('RestShapeSpringsForceField', points='@boxROI.indices', stiffness='1e12')
+                 
+                model.addObject("SubsetMultiMapping",name="subsetMapping",template="Vec3d,Vec3d", input='@'+deformableNode.getPathName()+'/DeformableMech' + ' ' + '@'+RigidifiedNode.getPathName()+'/RigidifiedMesh' , output='@./tetras', indexPairs=indexPairs.tolist())
+          
+                
+
+
+		        ##########################################
+                # Visualization                          #
+                ##########################################
+                modelVisu = model.addChild('visu')
+                modelVisu.addObject('MeshSTLLoader', filename=SurfaceMeshPath, name="loader")
+                modelVisu.addObject('OglModel', src="@loader", scale3d=[1, 1, 1])
+                modelVisu.addObject('BarycentricMapping')
+                
+                ##########################################
+                # Effector                               #
+                ########################################## 
+     
+               
+                #FPA on deformable!
+                CFFNode = model.addChild('CFFNode')
+                CFFNode.addObject('MeshSTLLoader', filename=SurfaceMeshPath, name="loader")
+                
+                CFFMO = CFFNode.addObject('MechanicalObject', position='@loader.position') #position=[[1, -7.4, 2.3],[3.7, -7.4, 2.9],[6.4, -7.4, 2.3]], showObject=True, showObjectScale=20, showColor=[0,1,0])
+                CFFSphereROI = CFFNode.addObject('SphereROI', template="Vec3d", name='CFFSphereROI', centers=[[0,0,3]], radii=[1.25], drawSphere=True)
+                CFFSphereROI.init()                
+                CFF = CFFNode.addObject('ConstantForceField', name='CFF1', template='Vec3', indices='@CFFSphereROI.indices', totalForce=[0, 0, 0]) #, showDirection=True, showVisuScale=10)                               
+                CFFNode.addObject("BarycentricMapping")
+ 
+                rootNode.addObject(Controller(name="ActuationController", RootNode=rootNode, RigidMO=RigidMO,
+                                              CFF=CFF,
+                                              CFFSphereROI=CFFSphereROI))
+
+                return rootNode            
+            
+"""            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
