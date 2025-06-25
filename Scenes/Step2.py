@@ -26,7 +26,7 @@ GeneratedMeshesPath = os.path.dirname(os.path.abspath(__file__))+'/Geometries/'
 TempPath = os.path.dirname(os.path.abspath(__file__))+'/Temp/'
 
 
-def CalcularB(Distancia_r_mm,Direccion_momento_magnetico,mu_mag_delGráfico): #
+def CalcularB(Distancia_r_mm, Direccion_momento_magnetico,mu_mag_delGráfico): #
             # Definición de variables
             Distancia_r = np.array(Distancia_r_mm)
             length_r = np.linalg.norm(Distancia_r) 
@@ -69,7 +69,7 @@ class Controller(Sofa.Core.Controller):
         self.t = 0
         print('Finished Init')
 
- 
+        # self.ModelNode = self.RootNode.solverNode.deformableNode.model  
 
     def MoveCFFSphereROI(self):   
         x = 10 * np.sin(self.t * 0.05) 
@@ -80,17 +80,12 @@ class Controller(Sofa.Core.Controller):
         
 
     def onAnimateBeginEvent(self, eventType):
+        
         self.MoveCFFSphereROI()
-        # self.onKeypressedEvent()
-        # self.mapCapCoordinatesTo3DCoords()
-        self.CFF.totalForce.value = [0,0,-200000]
+        self.CFF.totalForce.value = [0,0,-2000000]
         np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value[1:, :])
-        print(f"MagnetPose: {self.RigidMO.position.value}")       
+        # print(f"MagnetPose: {self.RigidMO.position.value}")       
         
-        
-        
-        np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value)
-        print(f"MagnetPose: {self.RigidMO.position.value}")       
         
         
         MagnetPose = []
@@ -99,18 +94,18 @@ class Controller(Sofa.Core.Controller):
             MagnetPose = np.loadtxt("MagnetPose_Direct.txt")
         except:
             print("error leyendo los datos desde archivo")
-        print("MagnetPose(Recibido desde Direct) ",MagnetPose)
+        # print("MagnetPose(Recibido desde Direct) ",MagnetPose)
         
         
         MagnetPosition = self.RigidMO.position.value[1:, :3]
-        print('Lista imanes:', MagnetPosition)
+        # print('Lista imanes:', MagnetPosition)
     
         if not hasattr(self, 'Lista_sensores'):
             self.SensorPosition = MagnetPosition.copy()
             self.SensorPosition[:, 2] -= Const.DeltaPositionSensor
 
        
-        print('Posicion sensores :', self.SensorPosition)
+        # print('Posicion sensores :', self.SensorPosition)
     
         SensorPosition = self.SensorPosition.copy()
         
@@ -138,10 +133,33 @@ class Controller(Sofa.Core.Controller):
             # print("campo_local: ", len(campo_local)) 
             TotalMagneticField = np.sum(LocalMagneticField, axis=0)
             GlobalMagneticField.append(TotalMagneticField)
-            print(f"campototal sensor {j}", TotalMagneticField)
+            # print(f"campototal sensor {j}", TotalMagneticField)
             
         np.savetxt("campo_global.txt", GlobalMagneticField)
         
+        
+        PointsSphereRoi = self.CFFSphereROI.pointsInROI.value
+
+        
+        # try: 
+        CovM = np.cov(np.transpose(PointsSphereRoi))
+        # print(CovM)
+        EigVals, EigVecs = np.linalg.eig(CovM)
+        minIdx = np.argmin(EigVals)
+        directions = EigVecs[:,minIdx]
+
+        # except:
+            # directions = [0,0,-0]
+            
+        # print("DIRECTIOn", directions)
+        print(f"PointsSphereRoi", PointsSphereRoi)
+        
+        
+        
+        # magnitude = -2e6  
+        # force_vector = magnitude * directions / np.linalg.norm(directions)
+        # self.CFF.totalForce.value = force_vector.tolist()
+        # print(self.CFF.totalForce.value )
         
 def createScene(rootNode):
     
@@ -247,11 +265,14 @@ def createScene(rootNode):
     pointsTip = np.array(positionAllPoints[indicesTip,:]).flatten().tolist()                                                 
     rigidIndexPerPoint = SortedRigidIdxs.tolist()
 
+
+
     # ----------------------------------------
     #            Articulation                           
     # ----------------------------------------
   
-    
+   
+  
     # ---- Fixed servoBody ----
     servoBody = scene.Simulation.addChild('ServoBody')
     servoBody.addObject('MechanicalObject', name='dofs', template='Rigid3',
@@ -309,14 +330,30 @@ def createScene(rootNode):
     
     freeCenter = scene.Simulation.addChild("freeCenter")
     freeCenter.addObject("MechanicalObject", name="dofs", template="Rigid3",
-                         position=nominal_pose1,
-                         showObject=False, showObjectScale=0)
+                          position=nominal_pose1,
+                          showObject=False, showObjectScale=0)
     freeCenter.addObject("UniformMass", totalMass=0.01)
     freeCenter.addObject("EulerImplicitSolver")
     freeCenter.addObject("SparseLDLSolver")
     freeCenter.addChild(RigidNode)
     
-  
+    
+    #Add the sensors 
+    nominal_pose2 = [] 
+    TipOrientation = [0, 0, 0, 1]
+    for center in Const.SensorCenters:
+        CurrentPose = center + TipOrientation
+        nominal_pose2 += CurrentPose
+    
+    sensorCenter = servoWheel.addChild("sensorCenter")
+    SensorMO = sensorCenter.addObject("MechanicalObject", name="dofs", template="Rigid3",
+                         position=nominal_pose2,
+                         showObject=True, showObjectScale=2)
+    sensorCenter.addObject("UniformMass", totalMass=0.01)
+    sensorCenter.addObject("EulerImplicitSolver")
+    sensorCenter.addObject("SparseLDLSolver")
+    sensorCenter.addObject("RigidMapping", input="@Simulation/Articulation/ServoWheel/dofs", rigidIndexPerPoint=Const.indexPerPointSensor)
+
     
     RigidifiedNode =  RigidNode.addChild('RigidifiedNode')   
     RigidifiedNode.addObject('MechanicalObject', name='RigidifiedMesh', position=pointsTip,
@@ -329,7 +366,7 @@ def createScene(rootNode):
     RigidNode.addObject('SubsetMultiMapping',
                           name="mapping",
                           input=['@../dofs', '@/Simulation/freeCenter/dofs'],
-                          output='@./', indexPairs=Const.IndexPairs)
+                          output='@./', indexPairs= [Const.IndexPairs])
     
     
     
@@ -400,13 +437,12 @@ def createScene(rootNode):
     CFFNode = model.addChild('CFFNode')
     CFFNode.addObject('MeshSTLLoader', filename=SurfaceMeshPath, name="loader")
     CFFMO = CFFNode.addObject('MechanicalObject', position='@loader.position') 
-    CFFSphereROI = CFFNode.addObject('SphereROI', template="Vec3d", name='CFFSphereROI', centers=[[0,0,2.9]], radii=[1.25], drawSphere=True)
-    CFFSphereROI.init()                
-    CFF = CFFNode.addObject('ConstantForceField', name='CFF', template='Vec3', indices='@CFFSphereROI.indices', totalForce=[0, 0, 0]) #, showDirection=True, showVisuScale=10)                               
+    CFFSphereROI = CFFNode.addObject('SphereROI', template="Vec3d", name='CFFSphereROI', centers=[[0,0,2]], radii=[1.25], drawSphere=True)
+    CFFSphereROI.init()              
+    CFF = CFFNode.addObject('ConstantForceField', name='CFF', template='Vec3', indices='@CFFSphereROI.indices', totalForce=[0, 0, 0])                               
     CFFNode.addObject("BarycentricMapping")
     
-   
-       
+
     rootNode.addObject(Controller(name="ActuationController", 
                                   RootNode=rootNode, 
                                   RigidMO=RigidMO,

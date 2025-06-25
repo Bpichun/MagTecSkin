@@ -13,12 +13,15 @@ import numpy as np
 DiskRadius = 2
 BoxROITolerance = 0.2
 MagnetBoxTolerance = 0.1
+
 SensorHeight = 3
 SensorWidth = 20
 SensorLength = 30
+
 PoissonRatio = 0.4
-YoungsModulus = 80000
-ArticulationAngle = 0   # degrees
+YoungsModulus = 800000
+
+ArticulationAngle = -60   # degrees
 ArticulationAngle = np.deg2rad(ArticulationAngle)   
 
 DeltaPositionSensor = 1
@@ -48,7 +51,22 @@ MagnetCenters = []
 MagnetCenters.append([-7.5, 0, 0])
 MagnetCenters += [[px, py, SensorHeight / 2] for px, py in GridPoints]
 MagnetFreeCenters = MagnetCenters[1:]
-print(MagnetCenters)
+# print(MagnetCenters)
+
+
+# ---- Sensors centers 3D coordinates ---- 
+SensorCenters = []
+SensorCenters += [[px, py, -SensorHeight/2] for px, py in GridPoints]
+
+indexPerPointSensor = []
+for center in SensorCenters:
+    if center[0] > MagnetBoxTolerance:
+        index = 0
+    else:
+        index = 1
+    indexPerPointSensor.append(index)
+            
+        
 
 # ---- BoxROI fixed  ----
 BoxROIFixCoords = [
@@ -99,81 +117,3 @@ for i in range(NMagnets):
     IndexPairs.extend([1, i])  # Map each magnet
     
     
-    
-    
-    
-    
-
-
-
-
-# # ######HallEffectorSensor
-# import numpy as np
-# # ---- Sensor physical parameters ----
-# DiskRadius = 2
-# BoxROITolerance = 0.2
-# MagnetBoxTolerance = 0.1
-# SensorHeight = 3
-# SensorWidth = 20
-# SensorLength = 30
-# PoissonRatio = 0.4
-# YoungsModulus = 40000
-
-
-# DeltaPositionSensor = 1
-# mu_mag_delGráfico =   4.627195188680999e-08
-
-
-# # ---- Generate Grid ----
-# GridMargin = 10 
-# Gridrows = 2
-# Gridcols = 3
-# NMagnets = Gridcols*Gridrows
-# MagnetSide = 1
-# CutMargin = GridMargin*0.2
-
-
-# # ---- Generate grid points (plane XY) ----
-# x = np.linspace(-(SensorLength - GridMargin)/2, (SensorLength - GridMargin)/2, Gridcols)
-# y = np.linspace(-(SensorWidth - GridMargin)/2, (SensorWidth- GridMargin)/2, Gridrows)
-# X, Y = np.meshgrid(x, y)
-
-# # ---- 2D grid points ----
-# GridPoints = np.column_stack((X.ravel(), Y.ravel()))
-
-
-# # ---- BoxROI centers 3D coordinates ---- 
-# MagnetCenters = []
-# MagnetCenters += [[px, py, SensorHeight / 2] for px, py in GridPoints]
-
-
-
-# # ---- BoxROI fixed  ----
-# BoxROIFixCoords = [
-#                     SensorLength/2 + BoxROITolerance,
-#                     SensorWidth/2 + BoxROITolerance, 
-#                     BoxROITolerance, 
-#                     -(SensorLength/2 + BoxROITolerance), 
-#                     -(SensorWidth/2 + BoxROITolerance), 
-#                     -BoxROITolerance
-#                   ]
-
-
-# # ---- BoxROI coordinates for magnets ----
-# MagnetBoxCoords = []
-
-
-# # Add BoxROI for each magnet
-# for point in GridPoints:
-#     px, py = point
-#     pz = SensorHeight / 2  
-#     box = [
-#         px - (MagnetSide / 2 + MagnetBoxTolerance),  
-#         py - (MagnetSide / 2 + MagnetBoxTolerance),  
-#         pz - (MagnetSide / 2 + MagnetBoxTolerance),  
-#         px + (MagnetSide / 2 + MagnetBoxTolerance),  
-#         py + (MagnetSide / 2 + MagnetBoxTolerance),  
-#         pz + (MagnetSide / 2 + MagnetBoxTolerance)   
-#     ]
-#     MagnetBoxCoords.append(box)
-
