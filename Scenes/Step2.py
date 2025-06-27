@@ -26,7 +26,7 @@ GeneratedMeshesPath = os.path.dirname(os.path.abspath(__file__))+'/Geometries/'
 TempPath = os.path.dirname(os.path.abspath(__file__))+'/Temp/'
 
 
-def CalcularB(Distancia_r_mm, Direccion_momento_magnetico,mu_mag_delGráfico): #
+def CalcularB(Distancia_r_mm, Direccion_momento_magnetico,mu_mag_delGráfico): #Dismm: a
             # Definición de variables
             Distancia_r = np.array(Distancia_r_mm)
             length_r = np.linalg.norm(Distancia_r) 
@@ -64,6 +64,7 @@ class Controller(Sofa.Core.Controller):
         
         self.RootNode = kwargs['RootNode']
         self.RigidMO = kwargs['RigidMO']
+        self.SensorMO = kwargs['SensorMO']
         self.CFF = kwargs['CFF']
         self.CFFSphereROI = kwargs['CFFSphereROI']  
         self.t = 0
@@ -78,6 +79,11 @@ class Controller(Sofa.Core.Controller):
         self.CFFSphereROI.centers = [[x, y, z]]  
         self.t += 1  
         
+    # def obtener_rotacion_sensor(sensor_quat):
+    # from scipy.spatial.transform import Rotation as R
+    # sensor_rot = R.from_quat(sensor_quat)
+    # return sensor_rot.as_matrix()  # matriz 3x3 rotación sensor local → global
+    
 
     def onAnimateBeginEvent(self, eventType):
         
@@ -86,50 +92,80 @@ class Controller(Sofa.Core.Controller):
         np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value[1:, :])
         # print(f"MagnetPose: {self.RigidMO.position.value}")       
         
+        np.savetxt("SensorPose_Direct.txt", self.SensorMO.position.value)
         
+        # MagnetPose = []
+        MagnetPose = np.array([])
         
-        MagnetPose = []
-        MagnetPose = np.array(MagnetPose)
+        # SensorPose = []
+        SensorPose = np.array([])
+        
         try: 
             MagnetPose = np.loadtxt("MagnetPose_Direct.txt")
+            SensorPose = np.loadtxt("SensorPose_Direct.txt")
         except:
             print("error leyendo los datos desde archivo")
         # print("MagnetPose(Recibido desde Direct) ",MagnetPose)
-        
-        
+        # print(SensorPose)
+        print('------------------------------------------------')
         MagnetPosition = self.RigidMO.position.value[1:, :3]
-        # print('Lista imanes:', MagnetPosition)
+        print('Lista imanes:', MagnetPosition)
     
-        if not hasattr(self, 'Lista_sensores'):
-            self.SensorPosition = MagnetPosition.copy()
-            self.SensorPosition[:, 2] -= Const.DeltaPositionSensor
+        # if not hasattr(self, 'Lista_sensores'):
+            # self.SensorPosition = MagnetPosition.copy()
+            # self.SensorPosition[:, 2] -= Const.DeltaPositionSensor
 
        
         # print('Posicion sensores :', self.SensorPosition)
     
-        SensorPosition = self.SensorPosition.copy()
-        
-        
+        SensorPosition = self.SensorMO.position.value[:, :3]
+        print('SensorPosition:', SensorPosition)
         GlobalMagneticField = []
 
         for j in range(Const.NMagnets):
+            
             LocalMagneticField = []
-            Dist_Sensor = SensorPosition[j] - MagnetPosition
+            # Dist_Sensor = SensorPosition[j] - MagnetPosition
+
             # print(f'Distancia sensor {j} - imanes:', Dist_Sensor)
-        
+            quat_sensor = self.SensorMO.position.value[j, 3:7]
+            MiR_Sensor = R.from_quat(quat_sensor)
+
+            R_sensor_inv = R.from_quat(quat_sensor).inv()
+            rotation_matrix_sensor_inv = R_sensor_inv.as_matrix()
+            # rotation_Matrix_Sensor = MiR_Sensor.as_matrix()
+            # print(f"i : {j}, quat_iman{quat_sensor} ")
+            
             for i in range(Const.NMagnets):
-                
+                Dist_Sensor_global = SensorPosition[j] - MagnetPosition[i]
                 # pos_iman = Lista_imanes[i]
-                quat_iman = self.RigidMO.position.value[i+1, 3:7]
-                # print(f"i : {i}, quat_iman{quat_iman} ")
-                MiR = R.from_quat(quat_iman)  # (x, y, z, w)
-    
-                rotation_Matrix = MiR.as_matrix() 
+                
+                delta_local = rotation_matrix_sensor_inv @ Dist_Sensor_global
+                
+                print(f'Distancia sensor {j} a {i} - imanes:', delta_local)
+                quat_Magnet = self.RigidMO.position.value[i+1, 3:7]
+                
+                # print(f"i : {i}, quat_iman{quat_Magnet} ")
+                MiR_Magnet = R.from_quat(quat_Magnet)  # (x, y, z, w)
+                # print(MiR_Iman)
+                print('--------------------------------------')
+                rotation_Matrix_Magnet = MiR_Magnet.as_matrix() 
+
+                
+                # rotation_Matrix = rotation_Matrix_Sensor.inv()
+                # rotation_Matrix = np.dot(rotation_Matrix_Sensor.inv(), rotation_Matrix_Magnet)
+                
+                rotation_Matrix = MiR_Sensor.inv().as_matrix() @ rotation_Matrix_Magnet
+                # print(rotation_Matrix)
+
+                
                 # print("rotation_Matrixxxxxxxxxxxxxxx: ", rotation_Matrix)
-                Direccion_momento_magnetico = [rotation_Matrix[0, 2], rotation_Matrix[1, 2], rotation_Matrix[2, 2]]
+                # Direccion_momento_magnetico = [rotation_Matrix[0, 2], rotation_Matrix[1, 2], rotation_Matrix[2, 2]]
+                Direccion_momento_magnetico = rotation_Matrix[:, 2]
+                
                 # print("Direccion momento magnetico: ", Direccion_momento_magnetico)
                 # print("Calcularb: ",CalcularB(Dist_Sensor[i], Direccion_momento_magnetico, Const.mu_mag_delGráfico))
-                LocalMagneticField.append(CalcularB(Dist_Sensor[i], Direccion_momento_magnetico, Const.mu_mag_delGráfico))
+                LocalMagneticField.append(CalcularB(delta_local, Direccion_momento_magnetico, Const.mu_mag_delGráfico))
             # print("campo_local: ", len(campo_local)) 
             TotalMagneticField = np.sum(LocalMagneticField, axis=0)
             GlobalMagneticField.append(TotalMagneticField)
@@ -138,21 +174,16 @@ class Controller(Sofa.Core.Controller):
         np.savetxt("campo_global.txt", GlobalMagneticField)
         
         
-        PointsSphereRoi = self.CFFSphereROI.pointsInROI.value
+        # PointsSphereRoi = self.CFFSphereROI.pointsInROI.value
 
         
-        # try: 
-        CovM = np.cov(np.transpose(PointsSphereRoi))
-        # print(CovM)
-        EigVals, EigVecs = np.linalg.eig(CovM)
-        minIdx = np.argmin(EigVals)
-        directions = EigVecs[:,minIdx]
+        # CovM = np.cov(np.transpose(PointsSphereRoi))
+        # # print(CovM)
+        # EigVals, EigVecs = np.linalg.eig(CovM)
+        # minIdx = np.argmin(EigVals)
+        # directions = EigVecs[:,minIdx]
 
-        # except:
-            # directions = [0,0,-0]
-            
-        # print("DIRECTIOn", directions)
-        print(f"PointsSphereRoi", PointsSphereRoi)
+        # print(f"PointsSphereRoi", PointsSphereRoi)
         
         
         
@@ -316,8 +347,8 @@ def createScene(rootNode):
         CurrentPose = center + TipOrientation
         nominal_pose += CurrentPose
     RigidMO = RigidNode.addObject("MechanicalObject",template="Rigid3d",name="RigidMesh", position=nominal_pose, 
-                                  showObject=True, showObjectScale=2, showIndices=True) # orientation is 240 deg away from scene origin
-    print(nominal_pose)
+                                  showObject=True, showObjectScale=2, showIndices=True, showIndicesScale=0.05) # orientation is 240 deg away from scene origin
+    # print(nominal_pose)
     
     # RigidNode.addObject("RigidMapping", input="@../dofs", output="@RigidMesh", index = 0)
 
@@ -446,6 +477,7 @@ def createScene(rootNode):
     rootNode.addObject(Controller(name="ActuationController", 
                                   RootNode=rootNode, 
                                   RigidMO=RigidMO,
+                                  SensorMO= SensorMO,
                                   CFF=CFF,
                                   CFFSphereROI=CFFSphereROI)) 
     
@@ -454,7 +486,7 @@ def createScene(rootNode):
         target.dofs.rest_position[0][0] = np.sin(factor * 2 * np.pi)
         # print("Articulation angle:", target.dofs.position[0][0])
         # print("ServoWheel pose[1]:", servoWheel.dofs.position[1])
-        print(nominal_pose)
-    animate(animation, {'target': articulationAngle}, duration=2., mode='loop')
+        # print(nominal_pose)
+    animate(animation, {'target': articulationAngle}, duration=2, mode='loop')
     
     return scene

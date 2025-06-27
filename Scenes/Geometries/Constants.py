@@ -21,7 +21,7 @@ SensorLength = 30
 PoissonRatio = 0.4
 YoungsModulus = 800000
 
-ArticulationAngle = -60   # degrees
+ArticulationAngle = -0   # degrees
 ArticulationAngle = np.deg2rad(ArticulationAngle)   
 
 DeltaPositionSensor = 1
@@ -30,8 +30,8 @@ mu_mag_delGráfico =   4.627195188680999e-08
 
 # ---- Generate Grid ----
 GridMargin = 10 
-Gridrows = 2
-Gridcols = 3
+Gridrows = 1
+Gridcols = 2
 NMagnets = Gridcols*Gridrows
 MagnetSide = 1
 CutMargin = GridMargin*0.2
@@ -58,6 +58,7 @@ MagnetFreeCenters = MagnetCenters[1:]
 SensorCenters = []
 SensorCenters += [[px, py, -SensorHeight/2] for px, py in GridPoints]
 
+# ---- Index for Sensor Centers ---- 
 indexPerPointSensor = []
 for center in SensorCenters:
     if center[0] > MagnetBoxTolerance:
