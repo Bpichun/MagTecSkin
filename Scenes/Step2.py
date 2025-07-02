@@ -87,36 +87,35 @@ class Controller(Sofa.Core.Controller):
 
     def onAnimateBeginEvent(self, eventType):
         
+        # Move Sphere ROI and apply force 
         self.MoveCFFSphereROI()
-        self.CFF.totalForce.value = [0,0,-2000000]
-        np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value[1:, :])
+        self.CFF.totalForce.value = [0, 0, -2000000]  
+
+
+        # ---- Save current pose of the Sensor and Magnets ----
+        np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value[1:, :]) 
+        np.savetxt("SensorPose_Direct.txt", self.SensorMO.position.value)
+  
         # print(f"MagnetPose: {self.RigidMO.position.value}")       
         
-        np.savetxt("SensorPose_Direct.txt", self.SensorMO.position.value)
-        
-        # MagnetPose = []
-        MagnetPose = np.array([])
-        
-        # SensorPose = []
+
+        MagnetPose = np.array([])        
         SensorPose = np.array([])
         
-        try: 
-            MagnetPose = np.loadtxt("MagnetPose_Direct.txt")
-            SensorPose = np.loadtxt("SensorPose_Direct.txt")
+       # ----Load saved positions----
+        try:
+            magnet_pose = np.loadtxt("MagnetPose_Direct.txt")
+            sensor_pose = np.loadtxt("SensorPose_Direct.txt")
         except:
-            print("error leyendo los datos desde archivo")
-        # print("MagnetPose(Recibido desde Direct) ",MagnetPose)
-        # print(SensorPose)
+            print("Error reading pose files")
+            return
+    
         print('------------------------------------------------')
+
+
+         # ---- Extract 3D positions of magnets and sensors ----
         MagnetPosition = self.RigidMO.position.value[1:, :3]
         print('Lista imanes:', MagnetPosition)
-    
-        # if not hasattr(self, 'Lista_sensores'):
-            # self.SensorPosition = MagnetPosition.copy()
-            # self.SensorPosition[:, 2] -= Const.DeltaPositionSensor
-
-       
-        # print('Posicion sensores :', self.SensorPosition)
     
         SensorPosition = self.SensorMO.position.value[:, :3]
         print('SensorPosition:', SensorPosition)
@@ -483,10 +482,15 @@ def createScene(rootNode):
     
     
     def animation(target, factor):
-        target.dofs.rest_position[0][0] = np.sin(factor * 2 * np.pi)
-        # print("Articulation angle:", target.dofs.position[0][0])
-        # print("ServoWheel pose[1]:", servoWheel.dofs.position[1])
-        # print(nominal_pose)
+        angle_start = 40   
+        angle_end = -50   
+        
+        angle_start = np.deg2rad(angle_start)
+        angle_end = np.deg2rad(angle_end)
+
+        angle = angle_start + (angle_end - angle_start) * 0.5 * (1 - np.sin(2 * np.pi * factor))
+    
+        target.dofs.rest_position[0][0] = angle 
     animate(animation, {'target': articulationAngle}, duration=2, mode='loop')
     
     return scene

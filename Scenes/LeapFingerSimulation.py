@@ -66,7 +66,7 @@ def createScene(rootNode):
     visual = servoBody.addChild('VisualModel')
     visual.addObject('MeshSTLLoader', name='loader', filename='/home/benjamin/Downloads/pip1.stl')
     visual.addObject('MeshTopology', src='@loader')
-    visual.addObject('OglModel', color=[0.15, 0.45, 0.75, 1.0])
+    visual.addObject('OglModel', color=[0.15, 0.45, 0.75, 1.0], translation=[0, -7.5, -13])
     visual.addObject('RigidMapping', index=0)
 
 
@@ -80,7 +80,7 @@ def createScene(rootNode):
 
     servoWheel = articulationAngle.addChild('ServoWheel')
     servoWheel.addObject('MechanicalObject', name='dofs', template='Rigid3',
-                          position=[[0., 0., 0., 0., 0., 0., 1.], [0., 0., 0., 0., 0., 0., 1.]], 
+                          position=[[0., 0., 15., 0., 0., 0., 1.], [0., 0., 15, 0., 0., 0., 1.]], 
                           showObject = False, showObjectScale=15)
     
     
@@ -92,14 +92,14 @@ def createScene(rootNode):
     visual1 = servoWheel.addChild('VisualModel1')
     # visual1.addObject('MechanicalObject', name='visuMO',template='Rigid3', position=[[0.0, 10, 0.0, 0, 0, 0, 1]], showObject = True, showObjectScale=15)
     # visual1.addObject('RigidMapping', index=1)
-    visual1.addObject('MeshSTLLoader', name='loader', filename='/home/benjamin/Downloads/parte2.stl')
+    visual1.addObject('MeshSTLLoader', name='loader', filename='/home/benjamin/Downloads/untitled.stl')
     visual1.addObject('MeshTopology', src='@loader')
-    visual1.addObject('OglModel', color=[0.4, 0.45, 0.5, 1.0], translation=[-35, -30, 5])
-    visual1.addObject('RigidMapping', index=0)
+    visual1.addObject('OglModel', color=[0.4, 0.45, 0.5, 1.0], translation=[-0, 0, 0])
+    visual1.addObject('RigidMapping', index=1)
     
     # --- Define Articulation center ----
     articulationCenter = articulationAngle.addChild('ArticulationCenter')
-    articulationCenter.addObject('ArticulationCenter', parentIndex=0, childIndex=1, posOnParent=[0, 0, -0], posOnChild=[0, 0, -0])
+    articulationCenter.addObject('ArticulationCenter', parentIndex=0, childIndex=1, posOnParent=[0, 0, 0], posOnChild=[0, 0,0])
     articulation = articulationCenter.addChild('Articulations')
     articulation.addObject('Articulation', translation=False, rotation=True, rotationAxis=[1, 0, 0], articulationIndex=0)
     articulationAngle.addObject('ArticulatedHierarchyContainer')
@@ -112,12 +112,26 @@ def createScene(rootNode):
     
 
     
-    def animation(target, factor):
+    # def animation(target, factor):
         # target.dofs.position[0][0] = math.cos(factor * 2 * math.pi)
-        target.dofs.rest_position[0][0] = math.cos(factor * 2 * math.pi)
+        # target.dofs.rest_position[0][0] = math.cos(factor * 2 * math.pi)
 
         # print("Articulation angle:", target.dofs.position[0][0])
         # print("ServoWheel pose[1]:", servoWheel.dofs.position[1])
+    # import math
+
+    def animation(target, factor):
+        angle_start = -0   
+        angle_end = -115   # 90 grados
+        
+        angle_start = np.deg2rad(angle_start)
+        angle_end = np.deg2rad(angle_end)
+        # Genera una oscilación entre angle_start y angle_end
+        angle = angle_start + (angle_end - angle_start) * 0.5 * (1 - math.cos(2 * math.pi * factor))
+    
+        target.dofs.rest_position[0][0] = angle 
+            
+        
     animate(animation, {'target': articulationAngle}, duration=10., mode='loop')
 
     return scene

@@ -150,7 +150,11 @@ def createScene(rootNode):
     servoBody.addObject('FixedProjectiveConstraint', indices=0)
     servoBody.addObject('UniformMass', totalMass=0.01)
 
-
+    visual = servoBody.addChild('VisualModel')
+    visual.addObject('MeshSTLLoader', name='loader', filename='/home/benjamin/Downloads/pip1.stl')
+    visual.addObject('MeshTopology', src='@loader')
+    visual.addObject('OglModel', color=[0.15, 0.45, 0.75, 1.0], translation=[0, -7.5, -13])
+    visual.addObject('RigidMapping', index=0)
 
     # ---- Articulation angle: 1 DOF rotation  ----
     articulationAngle = scene.Simulation.addChild('Articulation')
