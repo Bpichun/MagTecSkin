@@ -14,14 +14,14 @@ DiskRadius = 2
 BoxROITolerance = 0.2
 MagnetBoxTolerance = 0.1
 
-SensorHeight = 3
-SensorWidth = 20
-SensorLength = 30
+SensorHeight = 4
+SensorWidth = 18
+SensorLength = 80
 
 PoissonRatio = 0.4
-YoungsModulus = 800000
+YoungsModulus = 5000000
 
-ArticulationAngle = -0   # degrees
+ArticulationAngle = -90   # degrees
 ArticulationAngle = np.deg2rad(ArticulationAngle)   
 
 DeltaPositionSensor = 1

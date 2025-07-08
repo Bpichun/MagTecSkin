@@ -81,7 +81,9 @@ extruded_tri = factory.extrude([(2, triangle_surface)], 0, SensorWidth, 0)
 triangle_vol = extruded_tri[1]
 factory.cut([BoxDimTag], [triangle_vol])
 
-
+synchronize()
+launchGUI()
+gmsh.write("Sensor.step")
 
 gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", 0.1)
 synchronize()   
@@ -102,5 +104,5 @@ launchGUI()
 gmsh.write("Sensor.vtk")
 print(f"ExtrudeOut: {ExtrudeOut}")
 synchronize()
-launchGUI()
+# launchGUI()
 
