@@ -469,7 +469,7 @@ def createScene(rootNode):
     print("points",points)
     # points_ordenados = sorted(points, key=lambda p: (float(p[0]), float(p[1])))
     ContactNode = model.addChild("ContactNode")
-    ContactNodeMO = ContactNode.addObject("MechanicalObject", position=points, showColor=[0,0,200], showObjectScale=10, showObject=False,showIndices = True)
+    ContactNodeMO = ContactNode.addObject("MechanicalObject", position=points, showColor=[0,0,200], showObjectScale=10, showObject=False,showIndices = False)
     ContactNode.addObject("BarycentricMapping")
 
 
@@ -515,6 +515,6 @@ def createScene(rootNode):
         angle = angle_start + (angle_end - angle_start) * 0.5 * (1 - np.sin(2 * np.pi * factor))
     
         target.dofs.rest_position[0][0] = angle 
-    animate(animation, {'target': articulationAngle}, duration=2, mode='loop')
+    # animate(animation, {'target': articulationAngle}, duration=2, mode='loop')
     
     return scene

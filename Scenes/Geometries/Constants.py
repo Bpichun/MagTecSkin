@@ -23,6 +23,7 @@ YoungsModulus = 1500000
 
 ArticulationAngle = 90   # degrees
 ArticulationAngle = np.deg2rad(ArticulationAngle)   
+ArticulationAxis = -10
 
 DeltaPositionSensor = 1
 mu_mag_delGráfico =   4.627195188680999e-08
@@ -56,7 +57,7 @@ MagnetFreeCenters = MagnetCenters[1:]
 
 # ---- Sensors centers 3D coordinates ---- 
 SensorCenters = []
-SensorCenters += [[px, py, -SensorHeight/2] for px, py in GridPoints]
+SensorCenters += [[px, py, -SensorHeight/2 - ArticulationAxis] for px, py in GridPoints]
 
 # ---- Index for Sensor Centers ---- 
 indexPerPointSensor = []

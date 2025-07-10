@@ -344,14 +344,14 @@ def createScene(rootNode):
     # ---- Fixed servoBody ----
     servoBody = scene.Simulation.addChild('ServoBody')
     servoBody.addObject('MechanicalObject', name='dofs', template='Rigid3',
-                        position=[[0., 0., -10, 0., 0., 0., 1.]]) 
+                        position=[[0., 0., Const.ArticulationAxis, 0., 0., 0., 1.]]) 
     servoBody.addObject('FixedProjectiveConstraint', indices=0)
     servoBody.addObject('UniformMass', totalMass=0.01)
 
     visualServoBody = servoBody.addChild('visualServoBody')
     visualServoBody.addObject('MeshSTLLoader', name='loader', filename=GeneratedMeshesPath + 'thumb_dip.stl')
     visualServoBody.addObject('MeshTopology', src='@loader')
-    visualServoBody.addObject('OglModel', color=[0.15, 0.45, 0.75, 1], translation=[46.5, 0, -0], rotation=[0, 0, 0] )
+    visualServoBody.addObject('OglModel', color=[0.15, 0.45, 0.75, 1], translation=[46.5, 0, 0], rotation=[0, 0, 0] )
     visualServoBody.addObject('RigidMapping', index=0)
 
 
@@ -367,8 +367,8 @@ def createScene(rootNode):
     # ---- ServoWheel ----
     servoWheel = articulationAngle.addChild('ServoWheel')
     servoWheel.addObject('MechanicalObject', name='dofs', template='Rigid3',
-                         position=[[0., 0., -10, 0., 0., 0., 1.], 
-                                   [0., 0., -10, 0., 0., 0., 1.]],
+                         position=[[0., 0., Const.ArticulationAxis, 0., 0., 0., 1.], 
+                                   [0., 0., Const.ArticulationAxis, 0., 0., 0., 1.]],
                          showObject = True, showObjectScale=4)
     
 
