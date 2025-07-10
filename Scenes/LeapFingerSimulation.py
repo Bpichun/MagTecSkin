@@ -19,7 +19,12 @@ import Geometries.Constants as Const
 import rigidification  
 import math 
 
+
 dirPath = os.path.dirname(os.path.abspath(__file__)) + '/'
+path = os.path.dirname(os.path.abspath(__file__))+'/Meshes/'
+MeshesPath = os.path.dirname(os.path.abspath(__file__))+'/Geometries/'
+GeneratedMeshesPath = os.path.dirname(os.path.abspath(__file__))+'/Geometries/'
+TempPath = os.path.dirname(os.path.abspath(__file__))+'/Temp/'
 
 def createScene(rootNode):
     
@@ -64,7 +69,7 @@ def createScene(rootNode):
 
 
     visual = servoBody.addChild('VisualModel')
-    visual.addObject('MeshSTLLoader', name='loader', filename='/home/benjamin/Downloads/pip1.stl')
+    visual.addObject('MeshSTLLoader', name='loader', filename=GeneratedMeshesPath + 'pip.stl')
     visual.addObject('MeshTopology', src='@loader')
     visual.addObject('OglModel', color=[0.15, 0.45, 0.75, 1.0], translation=[0, -7.5, -13])
     visual.addObject('RigidMapping', index=0)
@@ -90,9 +95,7 @@ def createScene(rootNode):
     
     
     visual1 = servoWheel.addChild('VisualModel1')
-    # visual1.addObject('MechanicalObject', name='visuMO',template='Rigid3', position=[[0.0, 10, 0.0, 0, 0, 0, 1]], showObject = True, showObjectScale=15)
-    # visual1.addObject('RigidMapping', index=1)
-    visual1.addObject('MeshSTLLoader', name='loader', filename='/home/benjamin/Downloads/untitled.stl')
+    visual1.addObject('MeshSTLLoader', name='loader', filename= GeneratedMeshesPath + 'fingertip.stl')
     visual1.addObject('MeshTopology', src='@loader')
     visual1.addObject('OglModel', color=[0.4, 0.45, 0.5, 1.0], translation=[-0, 0, 0])
     visual1.addObject('RigidMapping', index=1)
@@ -110,25 +113,12 @@ def createScene(rootNode):
     servoWheel.dofs.showObject = True
     
     
-
-    
-    # def animation(target, factor):
-        # target.dofs.position[0][0] = math.cos(factor * 2 * math.pi)
-        # target.dofs.rest_position[0][0] = math.cos(factor * 2 * math.pi)
-
-        # print("Articulation angle:", target.dofs.position[0][0])
-        # print("ServoWheel pose[1]:", servoWheel.dofs.position[1])
-    # import math
-
     def animation(target, factor):
         angle_start = -0   
-        angle_end = -115   # 90 grados
-        
+        angle_end = -115  
         angle_start = np.deg2rad(angle_start)
         angle_end = np.deg2rad(angle_end)
-        # Genera una oscilación entre angle_start y angle_end
         angle = angle_start + (angle_end - angle_start) * 0.5 * (1 - math.cos(2 * math.pi * factor))
-    
         target.dofs.rest_position[0][0] = angle 
             
         

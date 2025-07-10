@@ -185,7 +185,6 @@ def createScene(rootNode):
         nominal_pose += CurrentPose
     RigidMO = RigidNode.addObject("MechanicalObject",template="Rigid3d",name="RigidMesh", position=nominal_pose, 
                                   showObject=True, showObjectScale=2, showIndices=True) # orientation is 240 deg away from scene origin
-    print(nominal_pose)
     
     # RigidNode.addObject("RigidMapping", input="@../dofs", output="@RigidMesh", index = 0)
 
@@ -273,7 +272,6 @@ def createScene(rootNode):
         target.dofs.rest_position[0][0] = np.sin(factor * 2 * np.pi)
         # print("Articulation angle:", target.dofs.position[0][0])
         # print("ServoWheel pose[1]:", servoWheel.dofs.position[1])
-        print(nominal_pose)
     animate(animation, {'target': articulationAngle}, duration=2., mode='loop')
 
     return scene

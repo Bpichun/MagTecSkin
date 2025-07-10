@@ -156,20 +156,21 @@ class Controller(Sofa.Core.Controller):
             rotation_matrix_sensor_inv = R_sensor_inv.as_matrix()
             # rotation_Matrix_Sensor = MiR_Sensor.as_matrix()
             # print(f"i : {j}, quat_iman{quat_sensor} ")
-            
+            print(f' sensor : {j}')
+            print('--------------------------------------')
             for i in range(Const.NMagnets):
                 Dist_Sensor_global = SensorPosition[j] - MagnetPosition[i]
                 # pos_iman = Lista_imanes[i]
                 
                 delta_local = rotation_matrix_sensor_inv @ Dist_Sensor_global
                 
-                print(f'Distancia sensor {j} a {i} - imanes:', delta_local)
+                # print(f'Distancia sensor {j} a {i} - imanes:', delta_local)
                 quat_Magnet = self.RigidMO.position.value[i+1, 3:7]
                 
                 # print(f"i : {i}, quat_iman{quat_Magnet} ")
                 MiR_Magnet = R.from_quat(quat_Magnet)  # (x, y, z, w)
                 # print(MiR_Iman)
-                print('--------------------------------------')
+                
                 rotation_Matrix_Magnet = MiR_Magnet.as_matrix() 
 
                 
@@ -184,7 +185,7 @@ class Controller(Sofa.Core.Controller):
                 # Direccion_momento_magnetico = [rotation_Matrix[0, 2], rotation_Matrix[1, 2], rotation_Matrix[2, 2]]
                 Direccion_momento_magnetico = rotation_Matrix[:, 2]
                 
-                # print("Direccion momento magnetico: ", Direccion_momento_magnetico)
+                print(f"Direccion momento magnetico iman {i+1} ", Direccion_momento_magnetico)
                 # print("Calcularb: ",CalcularB(Dist_Sensor[i], Direccion_momento_magnetico, Const.mu_mag_delGráfico))
                 LocalMagneticField.append(CalcularB(delta_local, Direccion_momento_magnetico, Const.mu_mag_delGráfico))
             # print("campo_local: ", len(campo_local)) 
@@ -368,21 +369,21 @@ def createScene(rootNode):
         CurrentPose = center + TipOrientation
         nominal_pose += CurrentPose
     RigidMO = RigidNode.addObject("MechanicalObject",template="Rigid3d",name="RigidMesh", position=nominal_pose, 
-                                  showObject=True, showObjectScale=2, showIndices=True, showIndicesScale=0.05) # orientation is 240 deg away from scene origin
+                                  showObject=True, showObjectScale=2, showIndices=True, showIndicesScale=0.04) # orientation is 240 deg away from scene origin
     # print(nominal_pose)
     
     # RigidNode.addObject("RigidMapping", input="@../dofs", output="@RigidMesh", index = 0)
 
   
-    nominal_pose1 = [] 
+    nominalPoseFreeCenters = [] 
     
     for center in Const.MagnetFreeCenters:
         CurrentPose = center + TipOrientation
-        nominal_pose1 += CurrentPose
+        nominalPoseFreeCenters += CurrentPose
     
     freeCenter = scene.Simulation.addChild("freeCenter")
     freeCenter.addObject("MechanicalObject", name="dofs", template="Rigid3",
-                          position=nominal_pose1,
+                          position=nominalPoseFreeCenters,
                           showObject=False, showObjectScale=0)
     freeCenter.addObject("UniformMass", totalMass=0.01)
     freeCenter.addObject("EulerImplicitSolver")
@@ -391,16 +392,16 @@ def createScene(rootNode):
     
     
     #Add the sensors 
-    nominal_pose2 = [] 
+    nominalPoseSensors = [] 
     TipOrientation = [0, 0, 0, 1]
     for center in Const.SensorCenters:
         CurrentPose = center + TipOrientation
-        nominal_pose2 += CurrentPose
+        nominalPoseSensors  += CurrentPose
     
     sensorCenter = servoWheel.addChild("sensorCenter")
     SensorMO = sensorCenter.addObject("MechanicalObject", name="dofs", template="Rigid3",
-                         position=nominal_pose2,
-                         showObject=True, showObjectScale=2)
+                         position=nominalPoseSensors,
+                         showObject=True, showObjectScale=2, showIndices=True, showIndicesScale=0.04)
     sensorCenter.addObject("UniformMass", totalMass=0.01)
     sensorCenter.addObject("EulerImplicitSolver")
     sensorCenter.addObject("SparseLDLSolver")

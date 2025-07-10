@@ -349,7 +349,7 @@ def createScene(rootNode):
     servoBody.addObject('UniformMass', totalMass=0.01)
 
     visualServoBody = servoBody.addChild('visualServoBody')
-    visualServoBody.addObject('MeshSTLLoader', name='loader', filename='/home/benjamin/Downloads/thumb_dip002.stl')
+    visualServoBody.addObject('MeshSTLLoader', name='loader', filename=GeneratedMeshesPath + 'thumb_dip.stl')
     visualServoBody.addObject('MeshTopology', src='@loader')
     visualServoBody.addObject('OglModel', color=[0.15, 0.45, 0.75, 1], translation=[46.5, 0, -0], rotation=[0, 0, 0] )
     visualServoBody.addObject('RigidMapping', index=0)
@@ -389,7 +389,7 @@ def createScene(rootNode):
         CurrentPose = center + TipOrientation
         nominal_pose += CurrentPose
     RigidMO = RigidNode.addObject("MechanicalObject",template="Rigid3d",name="RigidMesh", position=nominal_pose, 
-                                  showObject=True, showObjectScale=2, showIndices=True, showIndicesScale=0.05) # orientation is 240 deg away from scene origin
+                                  showObject=True, showObjectScale=1, showIndices=False, showIndicesScale=0.05) # orientation is 240 deg away from scene origin
     # print(nominal_pose)
     
     # RigidNode.addObject("RigidMapping", input="@../dofs", output="@RigidMesh", index = 0)
@@ -404,7 +404,7 @@ def createScene(rootNode):
 
     # visualservoWheel.addObject('UniformMass', totalMass=0.01)
     visualservoWheel.addObject("FixedConstraint", indices=0)
-    visualservoWheel.addObject('MeshSTLLoader', name='loader', filename='/home/benjamin/Downloads/thumb_finger002.stl')
+    visualservoWheel.addObject('MeshSTLLoader', name='loader', filename= GeneratedMeshesPath + 'thumb_fingertip.stl')
     visualservoWheel.addObject('MeshTopology', src='@loader')
     visualservoWheel.addObject('OglModel', color=[0.4, 0.45, 0.5, 1.0], translation=[-0, 0, -0])
     visualservoWheel.addObject('RigidMapping', index=1)
@@ -506,7 +506,7 @@ def createScene(rootNode):
     print("points",points)
     # points_ordenados = sorted(points, key=lambda p: (float(p[0]), float(p[1])))
     ContactNode = model.addChild("ContactNode")
-    ContactNodeMO = ContactNode.addObject("MechanicalObject", position=points, showColor=[0,0,200], showObjectScale=10, showObject=False,showIndices = True)
+    ContactNodeMO = ContactNode.addObject("MechanicalObject", position=points, showColor=[0,0,200], showObjectScale=10, showObject=False,showIndices = False)
     ContactNode.addObject("BarycentricMapping")
 
 
@@ -553,6 +553,6 @@ def createScene(rootNode):
         angle = angle_start + (angle_end - angle_start) * 0.5 * (1 - np.sin(2 * np.pi * factor))
     
         target.dofs.rest_position[0][0] = angle 
-    animate(animation, {'target': articulationAngle}, duration=2, mode='loop')
+    animate(animation, {'target': articulationAngle}, duration=1, mode='loop')
     
     return scene
