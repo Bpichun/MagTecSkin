@@ -44,7 +44,7 @@ while True:
             if data.ndim == 1:
                 row = data
             else:
-                row = data[0]
+                row = data[1]
 
             x_vals.append(row[0])
             y_vals.append(row[1])

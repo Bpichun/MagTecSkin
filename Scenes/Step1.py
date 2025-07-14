@@ -272,6 +272,8 @@ def createScene(rootNode):
         target.dofs.rest_position[0][0] = np.sin(factor * 2 * np.pi)
         # print("Articulation angle:", target.dofs.position[0][0])
         # print("ServoWheel pose[1]:", servoWheel.dofs.position[1])
+    
+    #Animation function
     animate(animation, {'target': articulationAngle}, duration=2., mode='loop')
 
     return scene

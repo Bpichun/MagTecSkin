@@ -21,12 +21,12 @@ SensorLength = 30
 PoissonRatio = 0.4
 YoungsModulus = 1500000
 
-ArticulationAngle = 90   # degrees
-ArticulationAngle = np.deg2rad(ArticulationAngle)   
-ArticulationAxis = -10
+ArticulationAngleDeg = 0   # degrees
+ArticulationAngleRad = np.deg2rad(ArticulationAngleDeg)   
+ArticulationAxis = -10 
 
 DeltaPositionSensor = 1
-mu_mag_delGráfico =   4.627195188680999e-08
+mu_magnitude = 4.627195188680999e-08
 
 
 # ---- Generate Grid ----
@@ -50,14 +50,16 @@ GridPoints = np.column_stack((X.ravel(), Y.ravel()))
 # ---- Magnets centers 3D coordinates ---- 
 MagnetCenters = []
 MagnetCenters.append([-7.5, 0, 0])
-MagnetCenters += [[px, py, SensorHeight / 2] for px, py in GridPoints]
+MagnetCenters += [[px, py, SensorHeight / 2] for px, py in GridPoints] 
 MagnetFreeCenters = MagnetCenters[1:]
 # print(MagnetCenters)
 
 
 # ---- Sensors centers 3D coordinates ---- 
 SensorCenters = []
-SensorCenters += [[px, py, -SensorHeight/2 - ArticulationAxis] for px, py in GridPoints]
+SensorCenters += [[px, py, -SensorHeight/2]  # - ArticulationAxis in z axis for Simulationthumbfinger
+                  for px, py in GridPoints]  
+
 
 # ---- Index for Sensor Centers ---- 
 indexPerPointSensor = []
