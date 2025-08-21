@@ -10,193 +10,106 @@ import Sofa
 import os
 import numpy as np
 from scipy.spatial.transform import Rotation as R 
-#from stlib.physics.deformable import ElasticMaterialObject
-#from stlib.physics.constraints import FixedBox
-#from stlib.physics.collision import CollisionMesh
+import Geometries.Constants as Const
+import rigidification
 
 
-#from stlib.visuals import VisualModel
+# from stlib.physics.deformable import ElasticMaterialObject
+# from stlib.physics.constraints import FixedBox
+# from stlib.physics.collision import CollisionMesh
 
-#from softrobots.actuators import PneumaticCavity
-#from softrobots.actuators import VolumeEffector
-#from softrobots.sensors  import PneumaticSensor
+
+# from stlib.visuals import VisualModel
+
+# from softrobots.actuators import PneumaticCavity
+# from softrobots.actuators import VolumeEffector
+# from softrobots.sensors  import PneumaticSensor
+
+
+
+
 path = os.path.dirname(os.path.abspath(__file__))+'/Meshes/'
 MeshesPath = os.path.dirname(os.path.abspath(__file__))+'/Geometries/'
 GeneratedMeshesPath = os.path.dirname(os.path.abspath(__file__))+'/Geometries/'
-
 TempPath = os.path.dirname(os.path.abspath(__file__))+'/Temp/'
 
-import Geometries.Constants as Const
-import rigidification
+
 
 
 class Controller(Sofa.Core.Controller):   
     
     def __init__(self, *args, **kwargs):
         Sofa.Core.Controller.__init__(self, *args, **kwargs)
-        print(" Python::__init__::" + str(self.name.value))
+        print("Python::__init__::" + str(self.name.value))
         
-        # self.RootNode = kwargs['RootNode']
-        #self.PositionEffector = kwargs['PositionEffector']
         self.RigidMO = kwargs['RigidMO']
         self.CFF = kwargs['CFF']
         self.CFFSphereROI = kwargs['CFFSphereROI']
-        # self.ForceVector = np.array([0,0,0])
-        # self.InitialGoalPosition = self.ForceVector
-
-
-        print(kwargs['RootNode'])
-        
-        # self.ModelNode = self.RootNode.solverNode.deformableNode.model        
         self.t = 0
-        # print('Finished Init')
-        
-# class Controller(Sofa.Core.Controller):   
-    
-#     def __init__(self, *args, **kwargs):
-#         Sofa.Core.Controller.__init__(self, *args, **kwargs)
-#         print(" Python::__init__::" + str(self.name.value))
-        
-#         self.RootNode = kwargs['RootNode']
-#         #self.PositionEffector = kwargs['PositionEffector']
-#         self.ContactNode = kwargs['ContactNode']
-#         self.ContactNodeMO = kwargs["ContactNodeMO"]
-#         self.RigidMO = kwargs['RigidMO']
-#         self.CFF = kwargs['CFF']
-#         self.CFFSphereROI = kwargs['CFFSphereROI']
-#         self.DeformableMech = kwargs['DeformableMech']
 
-#         self.ForceVector = np.array([0,0,0])
-#         self.InitialGoalPosition = self.ForceVector
-        
-#         print(kwargs['RootNode'])
-        
-#         self.ModelNode = self.RootNode.solverNode.deformableNode.model        
-#         self.t = 0
-        
-#         print('Finished Init')      
-        
-        
-    def onKeypressedEvent(self, c):
-        key = c['key']        
-        
-        print('blup')
-        ##########################################
-        # Cable                                  #
-        ##########################################                
-        
-        # Increment = 50000
-        # if (key == "a"):
-        #     self.ForceVector = self.ForceVector + [0,-Increment, 0]
-            
-        # if (key == "8"):
-        #     self.ForceVector = self.ForceVector + [0,Increment, 0]
-        # if (key == "4"):
-        #     self.ForceVector = self.ForceVector + [-Increment,0, 0]            
-        # if (key == "6"):
-        #     self.ForceVector = self.ForceVector + [Increment,0, 0]
-        # if (key == "+"):
-        #     self.ForceVector = self.ForceVector + [0, 0, Increment]
-        # if (key == "-"):
-        #     self.ForceVector = self.ForceVector + [0, 0, -Increment]
-        
-                            
-        # self.CFF.totalForce.value = self.ForceVector.tolist()                       
-        # #Diff = np.array(self.ForceVector) - np.array(self.InitialGoalPosition)     
-                
-        # print(f"MagnetPose: {self.RigidMO.position.value}")
-        # Diff = np.array(self.RigidMO.position.value) - np.array(self.RigidMO.rest_position.value)
-        # Orientation = R.from_quat(np.array(self.RigidMO.position.value)[0][3:])   
-        
-        
-        # # Orientation.as_euler
-        # print(f'Effector Displacement: {Diff[0][0]:.3f},{Diff[0][1]:.3f},{Diff[0][2]:.3f}')
-        # print(f'Effector Orientation (XYZ Euler, deg): {np.rad2deg(Orientation.as_euler("XYZ"))}')
-        # #print(f'EffectorOrientation Q: {Orientation[0]:.3f}, {Orientation[1]:.3f}, {Orientation[2]:.3f},{Orientation[3]:.3f}')
-        
-        
-        sphere_increment = 0.1
-        x, y, z = self.CFFSphereROI.centers[0]
+        # Trajectory parameters
+        puntos = Const.MagnetGridPoints
+        delta_z = -3.0
+        self.trayectoria = self.trajectory_S(puntos, delta_z)
+        self.indice = 0
+        self.contador = 0    
 
-        if key == "1":
-            y -= sphere_increment
-        if key == "2":
-            y += sphere_increment
-        if key == "3":
-            x -= sphere_increment
-        if key == "5":
-            x += sphere_increment
-        if key == "i":
-            z -= sphere_increment
-        if key == "o":
-            z += sphere_increment
-    
-        self.CFFSphereROI.centers = [[x, y, z]]
-        self.CFF.totalForce.value = [0,0,-20000 ]
-        print(f"Esfera ROI nueva posición: {[x, y, z]}")
-        
-        
-        
+
+    def trajectory_S(self, puntos, delta_z):
+
+        """
+        Generates an S-shaped trajectory with vertical zigzags in Z at each point.
+        """
+        pts = np.array(puntos)
+        x_vals = np.unique(pts[:,0])
+        trayectoria = []
+        invertir = False
+
+        for x in x_vals:
+            columna = pts[pts[:,0] == x]
+            columna = columna[np.argsort(columna[:,1])]
+            if invertir:
+                columna = columna[::-1]
+            for p in columna:
+                x, y = p
+                trayectoria.append([x, y, Const.MagneticSkinHeight/2])
+                trayectoria.append([x, y, -delta_z])
+                trayectoria.append([x, y, 0])
+            invertir = not invertir
+
+        return np.array(trayectoria)
+
+
     def MoveCFFSphereROI(self):   
-        x = 10 * np.sin(self.t * 0.05) 
-        y = 5 
-        z = 3 
-        self.CFFSphereROI.centers = [[x, y, z]]  
-        self.t += 1  
-   
+        if self.indice < len(self.trayectoria):
+            x, y, z = self.trayectoria[self.indice]
+            self.CFFSphereROI.centers = [[x, y, z]]
+            self.indice += 1
+
     def onAnimateBeginEvent(self, eventType):
         self.MoveCFFSphereROI()
         # self.onKeypressedEvent()
         # self.mapCapCoordinatesTo3DCoords()
-        self.CFF.totalForce.value = [0,0,-300000]
+        self.CFF.totalForce.value = Const.identadorForce
         np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value)
         print(f"MagnetPose: {self.RigidMO.position.value}")       
         
         
-        
+
 def createScene(rootNode):
 
                 rootNode.addObject('RequiredPlugin', pluginName='SofaPython3 SoftRobots SoftRobots.Inverse')
                 rootNode.addObject('VisualStyle', displayFlags='hideWireframe showBehaviorModels hideCollisionModels hideBoundingCollisionModels showForceFields showInteractionForceFields')
-                rootNode.addObject('RequiredPlugin', name="ArticulatedSystemPlugin")
                 rootNode.findData('gravity').value = [0, 0, -9810] #
                 #rootNode.findData('gravity').value = [0, 0, -1000] #
                 rootNode.findData('dt').value = 0.02
-
                 rootNode.addObject('FreeMotionAnimationLoop')
                 #rootNode.addObject('QPInverseProblemSolver', printLog='1', epsilon="1e-1", maxIterations="1000", tolerance="1e-5")
                 #rootNode.addObject('QPInverseProblemSolver', printLog=False, epsilon="0.0001", maxIterations="1000", tolerance="1e-5")
-
                 rootNode.addObject('GenericConstraintSolver', tolerance="1e-12", maxIterations="10000")
-
-                #rootNode.addObject('BackgroundSetting', color='0 0.168627 0.211765')
                 rootNode.addObject('BackgroundSetting', color='0.85 0.85 0.85')
-                root = Sofa.Core.Node()
-
-                # # Carga de plugins necesarios
-                # root.addObject('RequiredPlugin', name='Sofa.Component.AnimationLoop')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.Constraint.Lagrangian.Correction')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.Constraint.Lagrangian.Solver')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.Constraint.Projective')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.Engine.Select')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.IO.Mesh')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.LinearSolver.Direct')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.LinearSolver.Iterative')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.Mapping.Linear')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.Mapping.NonLinear')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.Mass')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.MechanicalLoad')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.ODESolver.Backward')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.Setting')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.SolidMechanics.FEM.Elastic')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.SolidMechanics.Spring')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.StateContainer')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.Topology.Container.Constant')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.Topology.Container.Dynamic')
-                # root.addObject('RequiredPlugin', name='Sofa.Component.Visual')
-                # root.addObject('RequiredPlugin', name='Sofa.GL.Component.Rendering3D')
-                # root.addObject('RequiredPlugin', name='Sofa.GL.Component.Shader')
-
+                
+                
          
                 rootNode.addObject('LightManager')
                 rootNode.addObject(
@@ -213,12 +126,9 @@ def createScene(rootNode):
                 )
                 
 
-                #VolumetricMeshPath = GeneratedMeshesPath + 'Cone_Volumetric.vtk'
-                VolumetricMeshPath = GeneratedMeshesPath + 'Sensor.vtk'
+                VolumetricMeshPath = GeneratedMeshesPath + 'MagneticSkin.vtk'
                                 
-                      
-                #SurfaceMeshPath = GeneratedMeshesPath + 'Cone_Surface.stl'
-                SurfaceMeshPath = GeneratedMeshesPath + 'Sensor.stl'
+                SurfaceMeshPath = GeneratedMeshesPath + 'MagneticSkin.stl'
                 
                 
                 
@@ -232,46 +142,22 @@ def createScene(rootNode):
                 #----------------------
                 # Rigidification - start
                 #----------------------          
-                
-                
-                
-                
+         
                 
                 completeMesh = rootNode.addChild('completeMesh')
-                
-                #completeMesh.addObject('RegularGrid',name='hexaGrid', nx="3", ny="3", nz="9", xmin="0", xmax="3", ymin="0", ymax="3", zmin="0", zmax="19")
                 completeMesh.addObject('MeshVTKLoader', name='loader', filename=VolumetricMeshPath)
                 completeMesh.addObject('TetrahedronSetTopologyContainer', src='@loader', name='container')
                 completeMesh.init()
                 MeshTetra = completeMesh.addObject('MeshTopology', name="AllMesh", src='@loader')
                
-                
-               
-  
-                
-               
-               
-                # boxTip = completeMesh.addObject('BoxROI', name='Tip', box=Const.MagnetBoxCoords, drawBoxes=True,tetrahedra="@AllMesh.tetrahedra" , position="@AllMesh.position")
-                # boxTip = completeMesh.addObject('BoxROI', name='Tip', box=Const.MagnetBoxCoords, drawBoxes=True,tetrahedra="@container.tetrahedra" , position="@container.position")
-                # boxTip = completeMesh.addObject('BoxROI', name='Tip', box=Const.MagnetBoxCoords[1], drawBoxes=True,tetrahedra="@container.tetrahedra" , position="@container.position")
-                # boxTip = completeMesh.addObject('SphereROI', template="Vec3d", name='SphereROI1', centers=[[0,0,3]], radii=[1], drawSphere=True)
 
-                # boxTip  = completeMesh.addObject('SphereROI', template="Vec3d", name='SphereROI1', centers=[[0,0,Const.SensorHeight]], radii=[3], drawSphere=True)                
-
-                # boxBody = completeMesh.addObject('BoxROI', name='MainBody', box=Const.MainBodyBoxCoords, drawBoxes=True, tetrahedra="@AllMesh.tetrahedra" , position="@AllMesh.position")
-                #boxFixed = completeMesh.addObject('BoxROI', name='FixedPart', box=[-40, -40, -62, 40, 40, -46], drawBoxes='true', tetrahedra="@AllMesh.tetrahedra" , position="@AllMesh.position")   
-                # boxTip.init()
-                # boxBody.init()
-                #boxFixed.init()
                 Boxes = []
                 for i in range(len(Const.MagnetBoxCoords)):
                     boxTip = completeMesh.addObject('BoxROI', name='Tip'+str(i), box=[Const.MagnetBoxCoords[i]], drawBoxes=True, 
                                                     tetrahedra="@container.tetrahedra" , position="@container.position")
                     Boxes.append(boxTip)
                     boxTip.init()
-                  
-                # boxTip = Boxes[-1]
-                
+
                 
                 
                 positionAllPoints = MeshTetra.findData('position').value;
@@ -287,39 +173,17 @@ def createScene(rootNode):
                     CurrentIndicesWithRigidIdx = np.append(IndicesNP.reshape((NPoints,1)), RigidIdx.reshape((NPoints,1)),1)
                     IndicesWithRigidIdx = np.append(IndicesWithRigidIdx, CurrentIndicesWithRigidIdx,0)
                 
-                print(f"IndicesWithRigidIdx: {IndicesWithRigidIdx}")
+                # print(f"IndicesWithRigidIdx: {IndicesWithRigidIdx}")
                 IndicesWithRigidIdxSorted = np.sort(IndicesWithRigidIdx[:,0],0)
                 SortedIdxs = np.argsort(IndicesWithRigidIdx[:,0],0)
                 SortedRigidIdxs = IndicesWithRigidIdx[:,1][SortedIdxs]
-                print(f"SortedRigidIdxs: {SortedRigidIdxs}")
+                # print(f"SortedRigidIdxs: {SortedRigidIdxs}")
                 
                 
-                indicesTip = IndicesWithRigidIdxSorted.tolist()
-                
+                indicesTip = IndicesWithRigidIdxSorted.tolist() 
                 rigidBlocks = [IndicesWithRigidIdxSorted.tolist()] 
-                
                 DeformableIndicesTotal = []    
-                
-                
-                
-                
-                # print(boxTip.indices.value)
-                # indicesTip= np.array(boxTip.indices.value);
-                # #indicesFixed= boxFixed.indices;
-                # #indicesTip = indicesFixed + indicesTip                
-                # print('indices tip' + str(indicesTip))
-                # indicesTip = indicesTip.flatten()
-                # print('indicesTip flatten ' + str(indicesTip))
-                # indicesTip = indicesTip.flatten()
-                # #indicesFixed = flatten(indicesFixed)
-                
-                # #rigidBlocks = [indicesFixed+indicesTip]
-                # rigidBlocks = [indicesTip]            
-                
-                # # indicesDeformable= np.array(boxBody.findData('indices').value);
-                # # indicesDeformable = indicesDeformable.flatten()
-                
-                DeformableIndicesTotal = []    
+                 
 
                 for i in range(nbPoints):
                     if i not in indicesTip:
@@ -328,20 +192,9 @@ def createScene(rootNode):
                 freeBlocks = np.sort(DeformableIndicesTotal)    
                 IdxsOrderedFreeBlocks = np.argsort(DeformableIndicesTotal)    
                 
-                
-                
-                # freeBlocks = indicesDeformable
-                print(nbPoints)
-                print('+++++++++++++++++++++++++++++++++++')
-                print(rigidBlocks)
-                print('+++++++++++++++++++++++++++++++++++')
-                print(freeBlocks)
-                print ('+++++++++++++++++++++++++++++++++++')
 #
                 indexPairs = np.array(rigidification.fillIndexPairs(nbPoints,freeBlocks,rigidBlocks))
-                print('indexPairs ')
-                print(indexPairs)
-                print('End of indexPairs ')
+
                 # pointsBody = np.array(completeMesh.MainBody.pointsInROI.value).flatten().tolist()
                 
                 NPPointsDeformable = positionAllPoints[DeformableIndicesTotal,:]
@@ -505,46 +358,7 @@ def createScene(rootNode):
                 
                 Goal = nominal_pose
                 
-                #PositionEffector = RigidNode.addObject('PositionEffector', template='Rigid3d', indices=[0], useDirections=[1,1,1,0,0,0], effectorGoal = Goal, printLog=True)
-                #RigidNode.addObject('BarycentricMapping')
-                
-                
-#                MOPositions = [[0,0,0], [0,0,-100]]
-#                RigidFrame = model.addChild('RigidFrame')
-#                RigidFrame.addObject("MechanicalObject",template="Rigid3d",name="RigidMesh", position=[0, 0,-100, 0, 0, 1, 0], showObject=True, showObjectScale=20) # orientation is 240 deg away from scene origin
-#               
-#                RigidFrame.addObject('BarycentricMapping')
 
-
-#                ##########################################
-#                # Actuation                              #
-#                ########################################## 
-#                 
-#                FPAs = model.addChild('ForcePointActuators')           
-#                Force1ApplicationPoint = [[0,0,-100]] 
-#                FPAs.addObject('MechanicalObject', name="FPAsMOs", showObject='True', showObjectScale='3', position=Force1ApplicationPoint)        
-                
-                # Use sliding actuators
-#                SANode = RigidNode.addChild('SANode')
-#                SANode.addObject('MechanicalObject', template='Rigid3', position=[0,0,Const.Height,0,0,1,0])
-#                SANode.addObject('SlidingActuator', name='SA1', template='Rigid3', direction='1 0 0 0 0 0', indices=0, maxForce=100, minForce=-100) #, showDirection=True, showVisuScale=10)                
-#                SANode.addObject('SlidingActuator', name='SA2', template='Rigid3', direction='0 1 0 0 0 0', indices=0, maxForce=100, minForce=-100)
-#                SANode.addObject("IdentityMapping")
-                
-                
-                
-                
-                
-#                #FPA on rigid!
-#                CFFNode = RigidNode.addChild('CFFNode')
-#                FPAMO = CFFNode.addObject('MechanicalObject', template='Rigid3', position=nominal_pose)
-#                CFFNode.addObject('ForcePointActuator', name='FPA1', template='Rigid3', direction='1 0 0 0 0 0', indices=0, maxForce=100000, minForce=-100000, showForce=True, visuScale=1, printLog=False) #, showDirection=True, showVisuScale=10)                
-#                CFFNode.addObject('ForcePointActuator', name='FPA2', template='Rigid3', direction='0 1 0 0 0 0', indices=0, maxForce=100000, minForce=-100000, showForce=True, visuScale=1, printLog=False)                
-#                CFFNode.addObject('ForcePointActuator', name='FPA3', template='Rigid3', direction='0 0 1 0 0 0', indices=0, maxForce=100000, minForce=-100000, showForce=True, visuScale=1, printLog=False)                
-                # CFFNode.addObject('ForcePointActuator', name='FPA3', template='Rigid3', direction='0 0 1 0 0 0', indices=0, maxForce=100, minForce=-100, showForce=True, visuScale=20)                
-#                CFFNode.addObject("IdentityMapping")
-# 
-               
                 #FPA on deformable!
                 CFFNode = model.addChild('CFFNode')
                 CFFNode.addObject('MeshSTLLoader', filename=SurfaceMeshPath, name="loader")
@@ -553,7 +367,7 @@ def createScene(rootNode):
                 # # CFFSphereCenters = [[1, -8.4, 2.1],[3.7, -8.4, 2.6],[5.4, -8.4, 2.3]]
                 # CFFSphereCenters = [[3.5, -6.5, 2.7],[3.7, -8.4, 2.6],[5.4, -8.4, 2.3]]
                 # CenterIdx = 0
-                CFFSphereROI = CFFNode.addObject('SphereROI', template="Vec3d", name='CFFSphereROI', centers=[[0,0,3]], radii=[1.25], drawSphere=True)
+                CFFSphereROI = CFFNode.addObject('SphereROI', template="Vec3d", name='CFFSphereROI', centers=[[0,0,3]], radii=[Const.indenterRadius], drawSphere=True)
                 CFFSphereROI.init()                
                 CFF = CFFNode.addObject('ConstantForceField', name='CFF1', template='Vec3', indices='@CFFSphereROI.indices', totalForce=[0, 0, 0]) #, showDirection=True, showVisuScale=10)                               
                 CFFNode.addObject("BarycentricMapping")
@@ -567,16 +381,7 @@ def createScene(rootNode):
                                               CFF=CFF,
                                               CFFSphereROI=CFFSphereROI))  
 
-                # rootNode.addObject(Controller(name="ActuationController",
-                #                             RootNode=rootNode,
-                #                             ContactNode=ContactNode, 
-                #                             RigidMO=RigidMO,
-                #                             CFF=CFF,
-                #                             ContactNodeMO = ContactNodeMO,
-                #                             CFFSphereROI = CFFSphereROI,
-                #                             DeformableMech = DeformableMech))                    
-                
-                
+
 
 
                 return rootNode

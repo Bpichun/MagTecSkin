@@ -6,34 +6,52 @@ Created on Mon May 12 16:11:36 2025
 @author: benjamin
 """
 
+
+"""
+This script uses Gmsh to model a 3D box-shaped sensor (parallelepiped), 
+performs boolean cuts to create cavities for magnets and a triangular slot, 
+and generates mesh files in STEP, STL, and VTK formats.
+"""
+
+
 from Constants import *
 import gmsh
 
+
+# Access to CAD operations (OpenCascade)
 factory = gmsh.model.occ
+
+# Shortcut to open the graphical user interface
 launchGUI = gmsh.fltk.run
 synchronize = factory.synchronize
 
 
+# Initialize the Gmsh environment
 gmsh.initialize()
 
-P1Tag = factory.addPoint(SensorLength/2, SensorWidth/2, 0)
-P2Tag = factory.addPoint(-SensorLength/2, SensorWidth/2, 0)
-P3Tag = factory.addPoint(-SensorLength/2, -SensorWidth/2, 0)
-P4Tag = factory.addPoint(SensorLength/2, -SensorWidth/2, 0)
+
+
+# Creation of the sensor base (rectangle in the XY plane)
+P1Tag = factory.addPoint(MagneticSkinLength/2, MagneticSkinWidth/2, 0)
+P2Tag = factory.addPoint(-MagneticSkinLength/2, MagneticSkinWidth/2, 0)
+P3Tag = factory.addPoint(-MagneticSkinLength/2, -MagneticSkinWidth/2, 0)
+P4Tag = factory.addPoint(MagneticSkinLength/2, -MagneticSkinWidth/2, 0)
 
 L1Tag = factory.addLine(P1Tag, P2Tag)
 L2Tag = factory.addLine(P2Tag, P3Tag)
 L3Tag = factory.addLine(P3Tag, P4Tag)
 L4Tag = factory.addLine(P4Tag, P1Tag)
 
-WireTag = factory.addWire([L1Tag,L2Tag,L3Tag,L4Tag])
-SurfaceTag = factory.addPlaneSurface([WireTag])
+WireTag = factory.addWire([L1Tag, L2Tag, L3Tag, L4Tag])       # Rectangle contour
+SurfaceTag = factory.addPlaneSurface([WireTag])               # Rectangle surface
 
 
+# Extrusion of the rectangle to generate the 3D volume of the MagneticSkin
 
-ExtrudeOut = factory.extrude([(2, SurfaceTag)], 0, 0, SensorHeight)
+ExtrudeOut = factory.extrude([(2, SurfaceTag)], 0, 0, MagneticSkinHeight)  # Extrusion along Z-axis
+BoxDimTag = ExtrudeOut[1]                                                  # ID of the created volume
 
-BoxDimTag = ExtrudeOut[1]
+
 
 # MagnetTag1 = factory.addBox(MagnetPosition[0]-MagnetSide/2, MagnetPosition[1]-MagnetSide/2,MagnetPosition[2]-MagnetSide/2, MagnetSide, MagnetSide, MagnetSide)
 # MagnetDimTag1 = (3,MagnetTag1)
@@ -52,7 +70,7 @@ factory.cut([BoxDimTag], MagnetTags)
 
 
 
-# cutTag1 = factory.addBox(-CutMargin/2, -SensorWidth/2, 1, CutMargin, SensorWidth, SensorHeight)
+# cutTag1 = factory.addBox(-CutMargin/2, -MagneticSkinWidth/2, 1, CutMargin, MagneticSkinWidth, MagneticSkinHeight)
 # cutDimTag1 = (3, cutTag1)
 # factory.cut([BoxDimTag], [cutDimTag1])
 
@@ -63,46 +81,45 @@ factory.cut([BoxDimTag], MagnetTags)
 
 
 
-cutY = -SensorWidth / 2  
+# cutY = -MagneticSkinWidth / 2  
 
-# Triangulo en XZ
-T1 = factory.addPoint(-1, -SensorWidth / 2 , 0)  
-T2 = factory.addPoint(0, -SensorWidth / 2 , 1)  
-T3 = factory.addPoint(1, -SensorWidth / 2 , 0)   
+# # Triangulo en XZ
+# T1 = factory.addPoint(-1, -MagneticSkinWidth / 2 , 0)  
+# T2 = factory.addPoint(0, -MagneticSkinWidth / 2 , 1)  
+# T3 = factory.addPoint(1, -MagneticSkinWidth / 2 , 0)   
 
-LT1 = factory.addLine(T1, T2)
-LT2 = factory.addLine(T2, T3)
-LT3 = factory.addLine(T3, T1)
+# LT1 = factory.addLine(T1, T2)
+# LT2 = factory.addLine(T2, T3)
+# LT3 = factory.addLine(T3, T1)
 
-triangle_wire = factory.addWire([LT1, LT2, LT3])
-triangle_surface = factory.addPlaneSurface([triangle_wire])
+# triangle_wire = factory.addWire([LT1, LT2, LT3])
+# triangle_surface = factory.addPlaneSurface([triangle_wire])
 
-extruded_tri = factory.extrude([(2, triangle_surface)], 0, SensorWidth, 0)  
-triangle_vol = extruded_tri[1]
-factory.cut([BoxDimTag], [triangle_vol])
+# extruded_tri = factory.extrude([(2, triangle_surface)], 0, MagneticSkinWidth, 0)  
+# triangle_vol = extruded_tri[1]
+# factory.cut([BoxDimTag], [triangle_vol])
 
-synchronize()
-launchGUI()
-gmsh.write("Sensor.step")
+synchronize()             # Synchronize the CAD model with the Gmsh model
+launchGUI()               # Open GUI to review the geometry
 
-gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", 0.1)
+
+gmsh.write("MagneticSkin.step")    # Save geometry in STEP format (CAD)
+
+gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", SurfaceMeshCharacteristicLength)  # Small characteristic length = finer mesh
 synchronize()   
-gmsh.model.mesh.generate(2)
-gmsh.write("Sensor.stl")
-# gmsh.model.mesh.refine()
-# gmsh.model.mesh.refine()
+gmsh.model.mesh.generate(2)                                     # Generate surface mesh (2D)
+gmsh.write("MagneticSkin.stl")                                        # Save as STL
 
 synchronize()
 launchGUI()
 
 gmsh.model.mesh.clear()
-gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", 0.35)
-gmsh.model.mesh.generate(3)
+gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", VolumeMeshCharacteristicLength)  # Mesh for volume
+gmsh.model.mesh.generate(3)                                     # Generate volume mesh (3D)
 synchronize()
 launchGUI()
 
-gmsh.write("Sensor.vtk")
+
+gmsh.write("MagneticSkin.vtk")      # Export 3D mesh 
 print(f"ExtrudeOut: {ExtrudeOut}")
 synchronize()
-# launchGUI()
-

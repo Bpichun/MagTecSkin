@@ -309,12 +309,10 @@ def createScene(rootNode):
                 )
                 
 
-                #VolumetricMeshPath = GeneratedMeshesPath + 'Cone_Volumetric.vtk'
-                VolumetricMeshPath = GeneratedMeshesPath + 'Sensor.vtk'
+                VolumetricMeshPath = GeneratedMeshesPath + 'MagneticSkin.vtk'
                                 
-                      
-                #SurfaceMeshPath = GeneratedMeshesPath + 'Cone_Surface.stl'
-                SurfaceMeshPath = GeneratedMeshesPath + 'Sensor.stl'
+
+                SurfaceMeshPath = GeneratedMeshesPath + 'MagneticSkin.stl'
                 
                 
                 
@@ -417,14 +415,6 @@ def createScene(rootNode):
                 
                 
                 
-                # freeBlocks = indicesDeformable
-                print(nbPoints)
-                print('+++++++++++++++++++++++++++++++++++')
-                print(rigidBlocks)
-                print('+++++++++++++++++++++++++++++++++++')
-                print(freeBlocks)
-                print ('+++++++++++++++++++++++++++++++++++')
-#
                 indexPairs = np.array(rigidification.fillIndexPairs(nbPoints,freeBlocks,rigidBlocks))
                 # print('indexPairs ')
                 # print(indexPairs)
@@ -448,6 +438,9 @@ def createScene(rootNode):
                 solverNode = rootNode.addChild("solverNode")
                 solverNode.addObject('EulerImplicitSolver',rayleighStiffness="0.1", rayleighMass="0.1")
                 solverNode.addObject('SparseLDLSolver',name='preconditioner')
+                solverNode.addObject('GenericConstraintCorrection', linearSolver='@preconditioner')
+                
+                
                 # solverNode.addObject('GenericConstraintCorrection', linearSolver='@preconditioner')
                 # solverNode.addObject('MechanicalMatrixMapper', template='Vec3d,Rigid3d', object1='@./deformableNode/DeformableMech', object2='@./RigidNode/RigidMesh', nodeToParse='@./deformableNode/model' )
                 #solverNode.addObject('MechanicalMatrixMapper', template='Rigid,Rigid', object1='@./RigidNode/RigidMesh', object2='@./RigidNode/RigidMesh', nodeToParse='@./RigidNode/RigidifiedNode', stopAtNodeToParse=True )

@@ -5,7 +5,7 @@ Created on Mon May 19 15:54:19 2025
 
 @author: benjamin
 """
-%matplotlib qt
+# %matplotlib qt
 import numpy as np
 import matplotlib.pyplot as plt
 import time
@@ -44,7 +44,7 @@ while True:
             if data.ndim == 1:
                 row = data
             else:
-                row = data[1]
+                row = data[3]
 
             x_vals.append(row[0])
             y_vals.append(row[1])

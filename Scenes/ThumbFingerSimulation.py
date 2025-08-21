@@ -88,7 +88,7 @@ class Controller(Sofa.Core.Controller):
         # self.ModelNode = self.RootNode.solverNode.deformableNode.model  
 
     def MoveCFFSphereROI(self):   
-        x = Const.SensorLength/2 * np.sin(self.t * 0.05) 
+        x = Const.MagneticSkinLength/2 * np.sin(self.t * 0.05) 
         y = -5 
         z = 5
         self.CFFSphereROI.centers = [[x, y, z]]  
@@ -123,9 +123,10 @@ class Controller(Sofa.Core.Controller):
 
     def onAnimateBeginEvent(self, eventType):
         
-        # Move Sphere ROI and apply force 
-        self.MoveCFFSphereROI()
-        self.CFF.totalForce.value = [0, 0, -2000000]  
+        # Move Sphere ROI and apply force
+        if Const.indenterMotion  == True:
+            self.MoveCFFSphereROI()
+            self.CFF.totalForce.value = Const.identadorForce 
 
 
 
@@ -159,7 +160,7 @@ class Controller(Sofa.Core.Controller):
             print("Error reading pose files")
             return
     
-        print('------------------------------------------------')
+        # print('------------------------------------------------')
 
         
          # ---- Extract 3D positions of magnets and sensors ----
@@ -190,13 +191,13 @@ class Controller(Sofa.Core.Controller):
                 
                 delta_local = rotation_matrix_sensor_inv @ Dist_Sensor_global
                 
-                print(f'Distancia sensor {j} a {i} - imanes:', delta_local)
+                # print(f'Distancia sensor {j} a {i} - imanes:', delta_local)
                 quat_Magnet = self.RigidMO.position.value[i+1, 3:7]
                 
                 # print(f"i : {i}, quat_iman{quat_Magnet} ")
                 MiR_Magnet = R.from_quat(quat_Magnet)  # (x, y, z, w)
                 # print(MiR_Iman)
-                print('--------------------------------------')
+                # print('--------------------------------------')
                 rotation_Matrix_Magnet = MiR_Magnet.as_matrix() 
 
                 
@@ -217,8 +218,8 @@ class Controller(Sofa.Core.Controller):
             # print("campo_local: ", len(campo_local)) 
             TotalMagneticField = np.sum(LocalMagneticField, axis=0)
             GlobalMagneticField.append(TotalMagneticField)
-            # print(f"campototal sensor {j}", TotalMagneticField)
-            
+            print(f"campototal sensor {j}", TotalMagneticField)
+        print('--------------------------------------')
         np.savetxt("campo_global.txt", GlobalMagneticField)
         
         
@@ -279,9 +280,9 @@ def createScene(rootNode):
 
 
     # ---- Paths to mesh files ----   
-    VolumetricMeshPath = GeneratedMeshesPath + 'Sensor.vtk'
+    VolumetricMeshPath = GeneratedMeshesPath + 'MagneticSkin.vtk'
     
-    SurfaceMeshPath = GeneratedMeshesPath + 'Sensor.stl'
+    SurfaceMeshPath = GeneratedMeshesPath + 'MagneticSkin.stl'
         
     #----------------------
     # Goal Node
@@ -298,8 +299,8 @@ def createScene(rootNode):
     completeMesh.init()
 
     Boxes = []
-    for i in range(len(Const.MagnetBoxCoords)):
-        boxTip = completeMesh.addObject('BoxROI', name='Tip'+str(i), box=[Const.MagnetBoxCoords[i]], drawBoxes=True, 
+    for i in range(len(Const.MagnetBoxCoordsThumb)):
+        boxTip = completeMesh.addObject('BoxROI', name='Tip'+str(i), box=[Const.MagnetBoxCoordsThumb[i]], drawBoxes=True, 
                                         tetrahedra="@container.tetrahedra" , position="@container.position")
         Boxes.append(boxTip)
         boxTip.init()
@@ -370,7 +371,7 @@ def createScene(rootNode):
     articulationAngle = scene.Simulation.addChild('Articulation')
     articulationAngle.addObject('MechanicalObject', name='dofs', template='Vec1', position=[[0]],
                                 rest_position=[[Const.ArticulationAngleRad]])
-    articulationAngle.addObject('RestShapeSpringsForceField', points=0, stiffness=1e9)
+    articulationAngle.addObject('RestShapeSpringsForceField', points=0, stiffness=1e12)
     articulationAngle.addObject('UniformMass', totalMass=0.01)
 
 
@@ -400,7 +401,7 @@ def createScene(rootNode):
         CurrentPose = center + TipOrientation
         nominal_pose += CurrentPose
     RigidMO = RigidNode.addObject("MechanicalObject",template="Rigid3d",name="RigidMesh", position=nominal_pose, 
-                                  showObject=True, showObjectScale=1, showIndices=False, showIndicesScale=0.05) # orientation is 240 deg away from scene origin
+                                  showObject=True, showObjectScale=2, showIndices=False, showIndicesScale=0.05) # orientation is 240 deg away from scene origin
     # print(nominal_pose)
     
     # RigidNode.addObject("RigidMapping", input="@../dofs", output="@RigidMesh", index = 0)
@@ -448,7 +449,7 @@ def createScene(rootNode):
     
     sensorCenter = servoWheel.addChild("sensorCenter")
     SensorMO = sensorCenter.addObject("MechanicalObject", name="dofs", template="Rigid3",
-                         position=nominalPoseSensors,
+                         position=nominalPoseSensors ,
                          showObject=True, showObjectScale=2)
     sensorCenter.addObject("UniformMass", totalMass=0.01)
     sensorCenter.addObject("EulerImplicitSolver")
@@ -538,7 +539,7 @@ def createScene(rootNode):
     CFFNode = model.addChild('CFFNode')
     CFFNode.addObject('MeshSTLLoader', filename=SurfaceMeshPath, name="loader")
     CFFMO = CFFNode.addObject('MechanicalObject', position='@loader.position') 
-    CFFSphereROI = CFFNode.addObject('SphereROI', template="Vec3d", name='CFFSphereROI', centers=[[0,0,2]], radii=[3], drawSphere=True)
+    CFFSphereROI = CFFNode.addObject('SphereROI', template="Vec3d", name='CFFSphereROI', centers=[[0,0,2]], radii=[Const.indenterRadius], drawSphere=True)
     CFFSphereROI.init()              
     CFF = CFFNode.addObject('ConstantForceField', name='CFF', template='Vec3', indices='@CFFSphereROI.indices', totalForce=[0, 0, 0])                               
     CFFNode.addObject("BarycentricMapping")
@@ -553,10 +554,10 @@ def createScene(rootNode):
                                   CFF=CFF,
                                   CFFSphereROI=CFFSphereROI)) 
     
-    
+
     def animation(target, factor):
-        angle_start = 70   
-        angle_end = -20   
+        angle_start = Const.ArticulationAngleDeg   
+        angle_end = -Const.ArticulationAngleDeg   
         
         angle_start = np.deg2rad(angle_start)
         angle_end = np.deg2rad(angle_end)
@@ -564,6 +565,10 @@ def createScene(rootNode):
         angle = angle_start + (angle_end - angle_start) * 0.5 * (1 - np.sin(2 * np.pi * factor))
     
         target.dofs.rest_position[0][0] = angle 
-    animate(animation, {'target': articulationAngle}, duration=1, mode='loop')
+        
+    #Aimation function
+
+    if Const.runAnimateArticulation == True:
+        animate(animation, {'target': articulationAngle}, duration=2, mode='loop')
     
     return scene

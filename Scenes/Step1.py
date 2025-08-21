@@ -65,9 +65,9 @@ def createScene(rootNode):
 
 
     # ---- Paths to mesh files ----   
-    VolumetricMeshPath = GeneratedMeshesPath + 'Sensor.vtk'
+    VolumetricMeshPath = GeneratedMeshesPath + 'MagneticSkin.vtk'
     
-    SurfaceMeshPath = GeneratedMeshesPath + 'Sensor.stl'
+    SurfaceMeshPath = GeneratedMeshesPath + 'MagneticSkin.stl'
     
     
     #----------------------
@@ -146,7 +146,7 @@ def createScene(rootNode):
     # ---- Fixed servoBody ----
     servoBody = scene.Simulation.addChild('ServoBody')
     servoBody.addObject('MechanicalObject', name='dofs', template='Rigid3',
-                        position=[[0., 0., Const.SensorHeight/2, 0., 0., 0., 1.]]) 
+                        position=[[0., 0., Const.MagneticSkinHeight/2, 0., 0., 0., 1.]]) 
     servoBody.addObject('FixedProjectiveConstraint', indices=0)
     servoBody.addObject('UniformMass', totalMass=0.01)
 
@@ -162,8 +162,8 @@ def createScene(rootNode):
     # ---- ServoWheel ----
     servoWheel = articulationAngle.addChild('ServoWheel')
     servoWheel.addObject('MechanicalObject', name='dofs', template='Rigid3',
-                         position=[[0., 0., Const.SensorHeight/2., 0., 0., 0., 1.], 
-                                   [0., 0., Const.SensorHeight/2., 0., 0., 0., 1.]],
+                         position=[[0., 0., Const.MagneticSkinHeight/2., 0., 0., 0., 1.], 
+                                   [0., 0., Const.MagneticSkinHeight/2., 0., 0., 0., 1.]],
                          showObject = True, showObjectScale=4)
     
 
@@ -268,12 +268,6 @@ def createScene(rootNode):
 
 
 
-    def animation(target, factor):
-        target.dofs.rest_position[0][0] = np.sin(factor * 2 * np.pi)
-        # print("Articulation angle:", target.dofs.position[0][0])
-        # print("ServoWheel pose[1]:", servoWheel.dofs.position[1])
-    
-    #Animation function
-    animate(animation, {'target': articulationAngle}, duration=2., mode='loop')
+
 
     return scene
