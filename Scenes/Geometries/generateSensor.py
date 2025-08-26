@@ -30,7 +30,6 @@ synchronize = factory.synchronize
 gmsh.initialize()
 
 
-
 # Creation of the sensor base (rectangle in the XY plane)
 P1Tag = factory.addPoint(MagneticSkinLength/2, MagneticSkinWidth/2, 0)
 P2Tag = factory.addPoint(-MagneticSkinLength/2, MagneticSkinWidth/2, 0)
@@ -57,15 +56,18 @@ BoxDimTag = ExtrudeOut[1]                                                  # ID 
 # MagnetDimTag1 = (3,MagnetTag1)
 # factory.cut([BoxDimTag],[MagnetDimTag1] )
 
-MagnetTags = []
-for box in MagnetBoxCoords[1:]:           #MagnetBoxCoords[1:]
+ObjectsBoxCoords = np.vstack([ MagnetBoxCoords, SensorBoxCoords])
+
+
+boxroiTags = []
+for box in ObjectsBoxCoords :           #MagnetBoxCoords[1:]
     x, y, z, dx, dy, dz = box
     dx = dx - x
     dy = dy - y
     dz = dz - z
     tag = factory.addBox(x, y, z, dx, dy, dz)
-    MagnetTags.append((3, tag))
-factory.cut([BoxDimTag], MagnetTags)
+    boxroiTags .append((3, tag))
+factory.cut([BoxDimTag], boxroiTags )
 
 
 

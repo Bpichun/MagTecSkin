@@ -500,7 +500,8 @@ def createScene(rootNode):
                 model.addObject('BoxROI', name='boxROI', box=Const.BoxROIFixCoords, drawBoxes=True, position="@tetras.rest_position", tetrahedra="@container.tetrahedra")
             
                 model.addObject('RestShapeSpringsForceField', points='@boxROI.indices', stiffness='1e12')
-
+                model.addObject('BoxROI', name='boxROIfixed', box=Const.BoxROIFixCoords1, drawBoxes=True, position="@tetras.rest_position", tetrahedra="@container.tetrahedra")
+                model.addObject('RestShapeSpringsForceField', points='@boxROIfixed.indices', stiffness='1e12')
 #               model.addObject('SparseLDLSolver', name='preconditioner')
 #                model.addObject('LinearSolverConstraintCorrection', solverName='preconditioner')
 #    

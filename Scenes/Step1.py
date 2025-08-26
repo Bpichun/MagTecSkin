@@ -87,8 +87,8 @@ def createScene(rootNode):
     
     #---- Create BoxROIs ----
     Boxes = []
-    for i in range(len(Const.MagnetBoxCoords)):
-        boxTip = completeMesh.addObject('BoxROI', name='Tip'+str(i), box=[Const.MagnetBoxCoords[i]], drawBoxes=True, tetrahedra="@container.tetrahedra" , position="@container.position")
+    for i in range(len(Const.rigidObjectsBoxCoords)):
+        boxTip = completeMesh.addObject('BoxROI', name='Tip'+str(i), box=[Const.rigidObjectsBoxCoords[i]], drawBoxes=True, tetrahedra="@container.tetrahedra" , position="@container.position")
         Boxes.append(boxTip)
         boxTip.init()
       
@@ -116,8 +116,6 @@ def createScene(rootNode):
     rigidBlocks = [IndicesWithRigidIdxSorted.tolist()] 
     
     DeformableIndicesTotal = []    
-    
-    
     
 
     for i in range(nbPoints):
@@ -180,18 +178,18 @@ def createScene(rootNode):
     TipOrientation = [0, 0, 0, 1]       
     
     
-    for center in Const.MagnetCenters:
+    for center in Const.rigidObjects:
         CurrentPose = center + TipOrientation
         nominal_pose += CurrentPose
     RigidMO = RigidNode.addObject("MechanicalObject",template="Rigid3d",name="RigidMesh", position=nominal_pose, 
-                                  showObject=True, showObjectScale=2, showIndices=True) # orientation is 240 deg away from scene origin
+                                  showObject=True, showObjectScale=Const.MagneticSkinHeight/2, showIndices=True) # orientation is 240 deg away from scene origin
     
     # RigidNode.addObject("RigidMapping", input="@../dofs", output="@RigidMesh", index = 0)
 
   
     nominal_pose1 = [] 
     
-    for center in Const.MagnetFreeCenters:
+    for center in Const.rigidObjects[1:]:
         CurrentPose = center + TipOrientation
         nominal_pose1 += CurrentPose
     
@@ -260,14 +258,10 @@ def createScene(rootNode):
     # Visualization                          
     # ----------------------------------------
     
-    
     modelVisu = model.addChild('visu')
     modelVisu.addObject('MeshSTLLoader', filename=SurfaceMeshPath, name="loader")
     modelVisu.addObject('OglModel', src="@loader", scale3d=[1, 1, 1])
     modelVisu.addObject('BarycentricMapping')
-
-
-
 
 
     return scene

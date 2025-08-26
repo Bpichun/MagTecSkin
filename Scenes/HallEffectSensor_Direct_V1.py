@@ -152,8 +152,8 @@ def createScene(rootNode):
                
 
                 Boxes = []
-                for i in range(len(Const.MagnetBoxCoords)):
-                    boxTip = completeMesh.addObject('BoxROI', name='Tip'+str(i), box=[Const.MagnetBoxCoords[i]], drawBoxes=True, 
+                for i in range(len(Const.rigidObjectsBoxCoords)):
+                    boxTip = completeMesh.addObject('BoxROI', name='Tip'+str(i), box=[Const.rigidObjectsBoxCoords[i]], drawBoxes=True, 
                                                     tetrahedra="@container.tetrahedra" , position="@container.position")
                     Boxes.append(boxTip)
                     boxTip.init()
@@ -241,7 +241,7 @@ def createScene(rootNode):
                 TipOrientation = [0, 0, 0, 1]    
                
                 nominal_pose = [] 
-                for center in Const.MagnetCenters:
+                for center in Const.rigidObjects:
                     # CurrentPose = [Const.MagnetCenters[i],Const.MagnetCenters[i],Const.MagnetCenters[i], 0,0,0,1]
                     CurrentPose = center + TipOrientation
                     nominal_pose += CurrentPose
@@ -276,13 +276,12 @@ def createScene(rootNode):
 
                 # model.addObject('BoxROI', name='boxROI', box=Const.BaseFixedBoxCoords, drawBoxes=True, position="@tetras.rest_position", tetrahedra="@container.tetrahedra")
                 
-                model.addObject('BoxROI', name='boxROI', box=Const.BoxROIFixCoords, drawBoxes=True, position="@tetras.rest_position", tetrahedra="@container.tetrahedra")
-
-                
-                
-                
+                model.addObject('BoxROI', name='boxROI', box=Const.BoxROIFixCoords, drawBoxes=True, position="@tetras.rest_position", tetrahedra="@container.tetrahedra") 
                 model.addObject('RestShapeSpringsForceField', points='@boxROI.indices', stiffness='1e12')
 
+
+                model.addObject('BoxROI', name='boxROIfixed', box=Const.BoxROIFixCoords1, drawBoxes=True, position="@tetras.rest_position", tetrahedra="@container.tetrahedra")
+                model.addObject('RestShapeSpringsForceField', points='@boxROIfixed.indices', stiffness='1e12')
 #               model.addObject('SparseLDLSolver', name='preconditioner')
 #                model.addObject('LinearSolverConstraintCorrection', solverName='preconditioner')
 #    

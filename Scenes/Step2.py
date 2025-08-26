@@ -274,8 +274,8 @@ def createScene(rootNode):
     completeMesh.init()
 
     Boxes = []
-    for i in range(len(Const.MagnetBoxCoords)):
-        boxTip = completeMesh.addObject('BoxROI', name='Tip'+str(i), box=[Const.MagnetBoxCoords[i]], drawBoxes=True, 
+    for i in range(len(Const.rigidObjectsBoxCoords)):
+        boxTip = completeMesh.addObject('BoxROI', name='Tip'+str(i), box=[Const.rigidObjectsBoxCoords[i]], drawBoxes=True, 
                                         tetrahedra="@container.tetrahedra" , position="@container.position")
         Boxes.append(boxTip)
         boxTip.init()
@@ -370,11 +370,11 @@ def createScene(rootNode):
     TipOrientation = [0, 0, 0, 1]       
     
     
-    for center in Const.MagnetCenters:
+    for center in Const.rigidObjects:
         CurrentPose = center + TipOrientation
         nominal_pose += CurrentPose
     RigidMO = RigidNode.addObject("MechanicalObject",template="Rigid3d",name="RigidMesh", position=nominal_pose, 
-                                  showObject=True, showObjectScale=2, showIndices=True, showIndicesScale=0.03) # orientation is 240 deg away from scene origin
+                                  showObject=True, showObjectScale=Const.MagneticSkinHeight/2, showIndices=True, showIndicesScale=0.03) # orientation is 240 deg away from scene origin
     # print(nominal_pose)
     
     # RigidNode.addObject("RigidMapping", input="@../dofs", output="@RigidMesh", index = 0)
@@ -382,7 +382,7 @@ def createScene(rootNode):
   
     nominalPoseFreeCenters = [] 
     
-    for center in Const.MagnetFreeCenters:
+    for center in Const.rigidObjects[1:]:
         CurrentPose = center + TipOrientation
         nominalPoseFreeCenters += CurrentPose
     
@@ -397,20 +397,20 @@ def createScene(rootNode):
     
     
     #Add the sensors 
-    nominalPoseSensors = [] 
-    TipOrientation = [0, 0, 0, 1]
-    for center in Const.SensorCenters:
-        CurrentPose = center + TipOrientation
-        nominalPoseSensors  += CurrentPose
+    # nominalPoseSensors = [] 
+    # TipOrientation = [0, 0, 0, 1]
+    # for center in Const.SensorCenters:
+    #     CurrentPose = center + TipOrientation
+    #     nominalPoseSensors  += CurrentPose
     
-    sensorCenter = servoWheel.addChild("sensorCenter")
-    SensorMO = sensorCenter.addObject("MechanicalObject", name="dofs", template="Rigid3",
-                         position=nominalPoseSensors,
-                         showObject=False, showObjectScale=2, showIndices=False, showIndicesScale=0.03)
-    sensorCenter.addObject("UniformMass", totalMass=0.01)
-    sensorCenter.addObject("EulerImplicitSolver")
-    sensorCenter.addObject("SparseLDLSolver")
-    sensorCenter.addObject("RigidMapping", input="@Simulation/Articulation/ServoWheel/dofs", rigidIndexPerPoint=Const.indexPerPointSensor)
+    # sensorCenter = servoWheel.addChild("sensorCenter")
+    # SensorMO = sensorCenter.addObject("MechanicalObject", name="dofs", template="Rigid3",
+    #                      position=nominalPoseSensors,
+    #                      showObject=True, showObjectScale=Const.MagneticSkinHeight/2, showIndices=False, showIndicesScale=0.03)
+    # sensorCenter.addObject("UniformMass", totalMass=0.01)
+    # sensorCenter.addObject("EulerImplicitSolver")
+    # sensorCenter.addObject("SparseLDLSolver")
+    # sensorCenter.addObject("RigidMapping", input="@Simulation/Articulation/ServoWheel/dofs", rigidIndexPerPoint=Const.indexPerPointSensor)
 
     
     RigidifiedNode =  RigidNode.addChild('RigidifiedNode')   
@@ -496,7 +496,7 @@ def createScene(rootNode):
     CFFNode = model.addChild('CFFNode')
     CFFNode.addObject('MeshSTLLoader', filename=SurfaceMeshPath, name="loader")
     CFFMO = CFFNode.addObject('MechanicalObject', position='@loader.position') 
-    CFFSphereROI = CFFNode.addObject('SphereROI', template="Vec3d", name='CFFSphereROI', centers=[[0,0,2]], radii=[3], drawSphere=True)
+    CFFSphereROI = CFFNode.addObject('SphereROI', template="Vec3d", name='CFFSphereROI', centers=Const.indenterPosition, radii=[Const.indenterRadius], drawSphere=True)
     CFFSphereROI.init()              
     CFF = CFFNode.addObject('ConstantForceField', name='CFF', template='Vec3', indices='@CFFSphereROI.indices', totalForce=[0, 0, 0])                               
     CFFNode.addObject("BarycentricMapping")

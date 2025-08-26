@@ -102,7 +102,7 @@ class SinusoidalController(Sofa.Core.Controller):
         t_rel = t - self.start_time
 
 
-        displacement = self.amplitude * np.sin(2 * math.pi * self.frequency * t_rel*0.001)
+        displacement = self.amplitude * np.sin(2 * np.pi * self.frequency * t_rel*0.001)
         print(displacement )
         grab_node = self.node.ExternalRefNode
         if grab_node is None:
@@ -152,7 +152,7 @@ def createScene(rootNode):
     rootNode.findData('dt').value = 0.02
 
     rootNode.addObject('FreeMotionAnimationLoop')
-    rootNode.addObject('QPInverseProblemSolver', printLog='1', epsilon="1e-1", maxIterations="1000", tolerance="1e-5")
+    rootNode.addObject('QPInverseProblemSolver', printLog='0', epsilon="1e-1", maxIterations="1000", tolerance="1e-5")
     #rootNode.addObject('QPInverseProblemSolver', printLog=False, epsilon="0.0001", maxIterations="1000", tolerance="1e-5")
 
     rootNode.addObject('GenericConstraintSolver', tolerance="1e-12", maxIterations="10000")
@@ -205,8 +205,8 @@ def createScene(rootNode):
     
     #---- Create BoxROIs ----
     Boxes = []
-    for i in range(len(Const.MagnetFreeCenters)):
-        boxTip = completeMesh.addObject('BoxROI', name='Tip'+str(i), box=[Const.MagnetBoxCoordstest[i]], drawBoxes=False, tetrahedra="@container.tetrahedra" , position="@container.position")
+    for i in range(len(Const.rigidObjectsBoxCoords[1:])):
+        boxTip = completeMesh.addObject('BoxROI', name='Tip'+str(i), box=[Const.rigidObjectsBoxCoords[i+1]], drawBoxes=False, tetrahedra="@container.tetrahedra" , position="@container.position")
         Boxes.append(boxTip)
         boxTip.init()
       
@@ -263,7 +263,7 @@ def createScene(rootNode):
     TipOrientation = [0, 0, 0, 1]       
     
     
-    for center in Const.MagnetFreeCenters:
+    for center in Const.rigidObjects[1:]:
         CurrentPose = center + TipOrientation
         nominal_pose += CurrentPose
     RigidMO = RigidNode.addObject("MechanicalObject",template="Rigid3d",name="RigidMesh", position=nominal_pose, 
@@ -272,7 +272,7 @@ def createScene(rootNode):
 
     RigidifiedNode =  RigidNode.addChild('RigidifiedNode')   
     RigidifiedNode.addObject('MechanicalObject', name='RigidifiedMesh', position=pointsTip,
-                             template='Vec3d', showObject=True, showObjectScale=4, showColor=1)       
+                             template='Vec3d', showObject=True, showObjectScale=5, showColor=1)       
     RigidifiedNode.addObject("RigidMapping", globalToLocalCoords="true", rigidIndexPerPoint=rigidIndexPerPoint)
     
 
