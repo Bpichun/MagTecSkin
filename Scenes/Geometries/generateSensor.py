@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+7#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Mon May 12 16:11:36 2025
@@ -56,7 +56,7 @@ BoxDimTag = ExtrudeOut[1]                                                  # ID 
 # MagnetDimTag1 = (3,MagnetTag1)
 # factory.cut([BoxDimTag],[MagnetDimTag1] )
 
-ObjectsBoxCoords = np.vstack([ MagnetBoxCoords, SensorBoxCoords])
+
 
 
 boxroiTags = []

@@ -66,7 +66,6 @@ def calculate_B_field(distance_r_mm, magnetic_moment_direction, mu_magnitude):
     return B_field_pT
 
 
-
 class Controller(Sofa.Core.Controller):   
     
     def __init__(self, *args, **kwargs):
@@ -77,32 +76,56 @@ class Controller(Sofa.Core.Controller):
         self.RigidMO = kwargs['RigidMO']
         self.CFF = kwargs['CFF']
         self.CFFSphereROI = kwargs['CFFSphereROI']  
+        self.articulationAngle = kwargs['articulationAngle']
         self.t = 0
+        self.runArticulation = True
+        self.dt = 0.01
+
         print('Finished Init')
 
         # self.ModelNode = self.RootNode.solverNode.deformableNode.model  
 
     def MoveCFFSphereROI(self):   
-        x = Const.MagneticSkinLength/3 * np.sin(self.t * 0.05) 
-        y = -5 
-        z = 3 
+        x = -20
+        y = Const.MagneticSkinWidth/3 * np.sin(self.t * 0.05)
+        z = Const.MagneticSkinHeight
         self.CFFSphereROI.centers = [[x, y, z]]  
         self.t += 1  
-    
+
+       
+    def animation(self, target, factor):
+
+        angle_start = np.deg2rad(Const.ArticulationAngleDeg)
+        angle_end   = np.deg2rad(-Const.ArticulationAngleDeg)
+        angle = angle_start + (angle_end - angle_start) * 0.5 * (1 - np.sin(2 * np.pi * factor))
+        target.dofs.rest_position[0][0] = angle   
         
+
+    def updateArticulation(self):
+        self.t += self.dt
+        if Const.runAnimateArticulation == True:
+            self.animation(self.articulationAngle, self.t % 2.0)
+
 
 
     def onAnimateBeginEvent(self, eventType):
-        
-        # Move Sphere ROI and apply force 
-        if Const.indenterMotion  == True:
-            self.MoveCFFSphereROI()
-        self.CFF.totalForce.value = Const.identadorForce
+        self.updateArticulation()
 
+
+        # Move Sphere ROI and apply force 
+
+        if Const.indenterMotion  == True and self.t > 308:
+            self.MoveCFFSphereROI()
+            # print('hola ')
+            self.runArticulation = False
+
+            
+            self.CFF.totalForce.value = Const.identadorForce
+        self.t += 1
         # ---- Save current pose of the Sensor and Magnets ----
         np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value[1:Const.NMagnets+1, :]) 
-        np.savetxt("SensorPose_Direct.txt", self.RigidMO.position.value[1:Const.NSensors+1, :]) 
-  
+        np.savetxt("SensorPose_Direct.txt", self.RigidMO.position.value[Const.NMagnets+1:, :]) 
+        
         # print(f"MagnetPose: {self.RigidMO.position.value}")       
         
         
@@ -119,23 +142,20 @@ class Controller(Sofa.Core.Controller):
 
         # ---- Extract pose of magnets and sensors ----
         MagnetPose = self.RigidMO.position.value[1:Const.NMagnets+1, :]
-        print('MagnetPose:', MagnetPose)
-    
-        SensorPose = self.RigidMO.position.value[Const.NSensors+1:, :]
+        # print('MagnetPose:', MagnetPose)
+
+        SensorPose = self.RigidMO.position.value[Const.NMagnets+1:, :]
         print('SensorPose:', SensorPose)
-
-
-        
 
          # ---- Extract 3D positions of magnets and sensors ----
         MagnetPosition = MagnetPose[:, :3]
-        print('Lista imanes:', MagnetPosition)
+        # print('Lista imanes:', MagnetPosition)
     
         SensorPosition = SensorPose[:,:3]
-        print('SensorPosition:', SensorPosition)
+        # print('SensorPosition:', SensorPosition)
         GlobalMagneticField = []
 
-        for j in range(Const.NMagnets):
+        for j in range(Const.NSensors):
             
             LocalMagneticField = []
             # print(f'Distancia sensor {j} - imanes:', Dist_Sensor)
@@ -151,7 +171,7 @@ class Controller(Sofa.Core.Controller):
             for i in range(Const.NMagnets):
                 Dist_Sensor_global = SensorPosition[j] - MagnetPosition[i]
         #         # pos_iman = Lista_imanes[i]
-                
+                # print(f'Distancia: {Dist_Sensor_global}')
                 delta_local = rotation_matrix_sensor_inv @ Dist_Sensor_global
                 
         #         # print(f'Distancia sensor {j} a {i} - imanes:', delta_local)
@@ -172,7 +192,7 @@ class Controller(Sofa.Core.Controller):
             # print("LocalMagneticField: ", LocalMagneticField) 
             TotalMagneticField = np.sum(LocalMagneticField, axis=0)
             GlobalMagneticField.append(TotalMagneticField)
-            print(f"GlobalMagneticField {j}", TotalMagneticField )
+            # print(f"GlobalMagneticField {j}", TotalMagneticField )
         np.savetxt("campo_global.txt", GlobalMagneticField)
         
 
@@ -287,15 +307,12 @@ def createScene(rootNode):
     #            Articulation                           
     # ----------------------------------------
   
-   
-    # servoMO = scene.Simulation.addChild('Servo')
-    # servoMO.addObject('MechanicalObject', name='dofs', template='Vec3', position=[[0,0,Const.MagneticSkinHeight/2]])
-    # servoMO.addObject('RestShapeSpringsForceField', points='@dofs.indices', stiffness=1e5)
     
     # ---- Fixed servoBody ----
     servoBody = scene.Simulation.addChild('ServoBody')
     servoBody.addObject('MechanicalObject', name='dofs', template='Rigid3',
-                        position=[[-0., 0., Const.MagneticSkinHeight/2, 0., 0., 0., 1.]]) 
+                        position=[[-0., 0., Const.MagneticSkinHeight/2, 0., 0., 0., 1.]],
+                        showObject = False, showObjectScale=4)
     servoBody.addObject('FixedProjectiveConstraint', indices=0)
     servoBody.addObject('UniformMass', totalMass=0.01)
 
@@ -307,15 +324,16 @@ def createScene(rootNode):
                                 rest_position=[[Const.ArticulationAngleRad]])
     articulationAngle.addObject('RestShapeSpringsForceField', points=0, stiffness=1e12)
     articulationAngle.addObject('UniformMass', totalMass=0.01)
-
-
-
+    articulationAngle.addObject('ArticulatedHierarchyContainer')
+#     articulationAngle.addObject("EulerImplicitSolver", rayleighStiffness=0.1, rayleighMass=0.1)
+#     articulationAngle.addObject("CGLinearSolver", iterations=200, tolerance=1e-12, threshold=1e-12)
+# # 
     # ---- ServoWheel ----
     servoWheel = articulationAngle.addChild('ServoWheel')
     servoWheel.addObject('MechanicalObject', name='dofs', template='Rigid3',
                          position=[[0., 0., Const.MagneticSkinHeight/2., 0., 0., 0., 1.], 
                                    [0., 0., Const.MagneticSkinHeight/2., 0., 0., 0., 1.]],
-                         showObject = True, showObjectScale=4)
+                         showObject = False, showObjectScale=4)
     
 
     
@@ -324,7 +342,7 @@ def createScene(rootNode):
 
    
 
-    RigidNode= servoWheel.addChild('RigidNode')
+    RigidNode = servoWheel.addChild('RigidNode')
      
     
     nominal_pose = [] 
@@ -335,45 +353,43 @@ def createScene(rootNode):
         CurrentPose = center + TipOrientation
         nominal_pose += CurrentPose
     RigidMO = RigidNode.addObject("MechanicalObject",template="Rigid3d",name="RigidMesh", position=nominal_pose, 
-                                  showObject=True, showObjectScale=Const.MagneticSkinHeight/2, showIndices=True, showIndicesScale=0.03) # orientation is 240 deg away from scene origin
-    # print(nominal_pose)
-    
+                                  showObject=True, showObjectScale=Const.MagneticSkinHeight/4, showIndices=False, showIndicesScale=0.03) # orientation is 240 deg away from scene origin
+
     # RigidNode.addObject("RigidMapping", input="@../dofs", output="@RigidMesh", index = 0)
 
   
     nominalPoseFreeCenters = [] 
     
-    for center in Const.rigidObjects[1:]:
+    for center in Const.rigidObjects[1:Const.NMagnets+1]:
         CurrentPose = center + TipOrientation
         nominalPoseFreeCenters += CurrentPose
     
     freeCenter = scene.Simulation.addChild("freeCenter")
     freeCenter.addObject("MechanicalObject", name="dofs", template="Rigid3",
                           position=nominalPoseFreeCenters,
-                          showObject=False, showObjectScale=0)
+                          showObject=True, showObjectScale=1.5)
     freeCenter.addObject("UniformMass", totalMass=0.01)
     freeCenter.addObject("EulerImplicitSolver")
     freeCenter.addObject("SparseLDLSolver")
     freeCenter.addChild(RigidNode)
     
-    
-    # #Add the sensors 
-    # nominalPoseSensors = [] 
-    # TipOrientation = [0, 0, 0, 1]
-    # for center in Const.SensorCenters:
-    #     CurrentPose = center + TipOrientation
-    #     nominalPoseSensors  += CurrentPose
-    
-    # sensorCenter = servoWheel.addChild("sensorCenter")
-    # SensorMO = sensorCenter.addObject("MechanicalObject", name="dofs", template="Rigid3",
-    #                      position=nominalPoseSensors,
-    #                      showObject=True, showObjectScale=Const.MagneticSkinHeight/2, showIndices=False, showIndicesScale=0.03)
-    # sensorCenter.addObject("UniformMass", totalMass=0.01)
-    # sensorCenter.addObject("EulerImplicitSolver")
-    # sensorCenter.addObject("SparseLDLSolver")
-    # # sensorCenter.addObject("RigidMapping", input="@Simulation/Articulation/ServoWheel/dofs", rigidIndexPerPoint=Const.indexPerPointSensor)
 
-    
+
+    #Add the sensors 
+    nominalPoseSensors = [] 
+    TipOrientation = [0, 0, 0, 1]
+    for center in Const.SensorCenters:
+        CurrentPose = center + TipOrientation
+        nominalPoseSensors  += CurrentPose
+        
+    sensorCenter = servoWheel.addChild("sensorCenter")
+    SensorMO = sensorCenter.addObject("MechanicalObject", name="dofs", template="Rigid3",
+                         position=nominalPoseSensors,
+                         showObject=False, showObjectScale=1.5, showIndices=True, showIndicesScale=0.02)
+    sensorCenter.addObject("UniformMass", totalMass=0.01)
+    sensorCenter.addObject("EulerImplicitSolver")
+    sensorCenter.addObject("SparseLDLSolver")
+    sensorCenter.addObject("RigidMapping", input="@Simulation/Articulation/ServoWheel/dofs", rigidIndexPerPoint=Const.indexPerPointSensor,  globalToLocalCoords=True)
 
 
     RigidifiedNode =  RigidNode.addChild('RigidifiedNode')   
@@ -383,29 +399,28 @@ def createScene(rootNode):
     
     
     
-    # ---- SubsetMultiMapping to connect ServoWheel and freeCenter to rigid tips ----
+    # ---- SubsetMultiMapping to connect ServoWheel, sensorCenter and freeCenter to rigid tips ----
     RigidNode.addObject('SubsetMultiMapping',
                           name="mapping",
-                          input=['@../dofs', '@/Simulation/freeCenter/dofs'],
+                          input=['@Simulation/Articulation/ServoWheel/dofs',
+                                 '@/Simulation/freeCenter/dofs', 
+                                 '@Simulation/Articulation/ServoWheel/sensorCenter/dofs'],
                           output='@./', indexPairs= [Const.IndexPairs])
     
-    
-    
+
     # --- Define Articulation center ----
     articulationCenter = articulationAngle.addChild('ArticulationCenter')
     articulationCenter.addObject('ArticulationCenter', parentIndex=0, childIndex=1, posOnParent=[0., 0., 0.], posOnChild=[0., 0., 0.])
     articulation = articulationCenter.addChild('Articulations')
     articulation.addObject('Articulation', translation=False, rotation=True, rotationAxis=[0, 1, 0], articulationIndex=0)
-    articulationAngle.addObject('ArticulatedHierarchyContainer')
-    
-    
+
+
     
     # ---- Deformable Node -----
     deformableNode = RigidifiedNode.addChild("deformableNode")
     deformableNode.addObject('PointSetTopologyContainer', position=pointsBody)
     deformableNode.addObject('MechanicalObject', name='DeformableMech', showObject = False, showObjectScale = 4)
    
-    
    
     model = deformableNode.addChild('model')
     RigidifiedNode.addChild(model)
@@ -425,8 +440,15 @@ def createScene(rootNode):
     model.addObject("SubsetMultiMapping",name="subsetMapping",template="Vec3d,Vec3d", input='@'+deformableNode.getPathName()+'/DeformableMech' + ' ' + '@'+RigidifiedNode.getPathName()+'/RigidifiedMesh' , output='@./tetras', indexPairs=indexPairs.tolist())
 
 
-  
 
+    model.addObject('MeshSTLLoader', 
+                       name="ROIloader", 
+                       filename='Geometries/Disk.stl', 
+                       scale3d="1 1 1", 
+                       translation ='1, 1, 5',
+                       rotation="0 0 0")
+    
+    
     # ----------------------------------------
     # Visualization                          
     # ----------------------------------------
@@ -439,7 +461,7 @@ def createScene(rootNode):
 
 
     
-    	#---- Sphere ROI ---- 
+    #---- Sphere ROI ---- 
     CFFNode = model.addChild('CFFNode')
     CFFNode.addObject('MeshSTLLoader', filename=SurfaceMeshPath, name="loader")
     CFFMO = CFFNode.addObject('MechanicalObject', position='@loader.position') 
@@ -447,29 +469,16 @@ def createScene(rootNode):
     CFFSphereROI.init()              
     CFF = CFFNode.addObject('ConstantForceField', name='CFF', template='Vec3', indices='@CFFSphereROI.indices', totalForce=[0, 0, 0])                               
     CFFNode.addObject("BarycentricMapping")
-    
 
-    rootNode.addObject(Controller(name="ActuationController", 
+
+
+
+    controller = rootNode.addObject(Controller(name="ActuationController", 
                                   RootNode=rootNode, 
                                   RigidMO=RigidMO,
                                   CFF=CFF,
-                                  CFFSphereROI=CFFSphereROI)) 
+                                  CFFSphereROI=CFFSphereROI,
+                                  articulationAngle=articulationAngle)) 
     
-    
-    def animation(target, factor):
-        angle_start = Const.ArticulationAngleDeg   
-        angle_end = -Const.ArticulationAngleDeg   
         
-        angle_start = np.deg2rad(angle_start)
-        angle_end = np.deg2rad(angle_end)
-
-        angle = angle_start + (angle_end - angle_start) * 0.5 * (1 - np.sin(2 * np.pi * factor))
-    
-        target.dofs.rest_position[0][0] = angle 
-        
-    #Aimation function
-
-    if Const.runAnimateArticulation == True:
-        animate(animation, {'target': articulationAngle}, duration=2, mode='loop')
-    
     return scene

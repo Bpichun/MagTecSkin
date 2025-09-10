@@ -21,43 +21,40 @@ import numpy as np
 '''
 # ---- Sensor physical parameters ----
 
-DiskRadius = 2
-DeltaPositionSensor = 1
-
-# Additional margin to define the region of interest (Rigid).
-BoxROITolerance = 0.2
+# # Additional margin to define the region of interest (Rigid).
+# BoxROITolerance = 0.2
 
 
 # Extra tolerance around each magnet to define its interaction volume.
-MagnetBoxTolerance = 0.1
+BoxTolerance = 0.1
 
-# Physical dimensions of the MagneticSkin (in millimeters).
-MagneticSkinHeight = 5      # Height (Z-axis)
-MagneticSkinWidth = 20      # Width (Y-axis)
-MagneticSkinLength = 50     # Length (X-axis)
+# Physical dimensions of the MagneticSkin.
+MagneticSkinHeight = 4     
+MagneticSkinWidth = 20      
+MagneticSkinLength = 50     
 
 # Mechanical properties of the sensor material (used for physical deformation simulations).
 PoissonRatio = 0.4            # Poisson ratio of the material
-YoungsModulus = 60000        # Youngs modulus (material stiffness)
+YoungsModulus = 50000        # Youngs modulus (material stiffness)
 
 # Magnetic moment magnitude
-mu_magnitude = 4.627195188680999e-08     # Magnetic moment magnitude (in appropriate units)
+mu_magnitude = 4.627195188680999e-08   
 
 
 #Small characteristic length factor = finer mesh
 SurfaceMeshCharacteristicLength = 0.1    # finer mesh for surfaces (2D)
-VolumeMeshCharacteristicLength = 0.25    # coarser mesh for volume (3D)
+VolumeMeshCharacteristicLength = 0.3    # coarser mesh for volume (3D)
 
 
 # ---- Indenter Parameters (SphereROI) ----
 indenterRadius = 2                                      # Radius of the sphere used as the indenter
-indenterPosition = [0, 0, MagneticSkinHeight]              # Initial position of the indenter (on the top surface)
-indenterMotion = False                                  # Enables or disables motion of the indenter
-identadorForce = [0, 0, -1000000]                           # Total force applied by the indenter (negative Z direction)
+indenterPosition = [0, 0, MagneticSkinHeight]           # Initial position of the indenter 
+indenterMotion = True                                   # Enables or disables motion of the indenter
+identadorForce = [0, 0, -300000]                        # Total force applied by the indenter 
 
 # Articulation parameters
-ArticulationAngleDeg = -30                               # Articulation angle in degrees
-ArticulationAngleRad = np.deg2rad(ArticulationAngleDeg)    # Convert angle to radians for calculations
+ArticulationAngleDeg = -45                             # Articulation angle in degrees
+ArticulationAngleRad = np.deg2rad(ArticulationAngleDeg)    
 runAnimateArticulation = True                            # Flag to enable/disable animation of the articulation
 ArticulationAxis = -10 
 
@@ -66,34 +63,30 @@ ArticulationAxis = -10
 # ---- Generate grid for magnet positions ----
 
 GridMargin = 10                                 # Margin from the edges to place magnets within the skin area
-GridrowsMagnets = 2                             # Number of rows in the magnet grid
+GridrowsMagnets = 2                            # Number of rows in the magnet grid
 GridcolsMagnets = 3                             # Number of columns in the magnet grid
-NMagnets = GridcolsMagnets * GridrowsMagnets    # Total number of magnets
-MagnetSide = 1                                # Side length of each magnet (assuming square/cubic magnets)
-CutMargin = GridMargin * 0.2                    # Additional margin for cutting or adjustment
-
-
+NMagnets = GridcolsMagnets * GridrowsMagnets    # Number of magnets
+MagnetSide = 1                               
+CutMargin = GridMargin * 0.2                    
 
 
 
 # ---- Generate grid for sensor positions ----
 
 SensorGridMargin = 10                                   # Margin from the edges to place sensors within the skin area
-GridrowsSensors = 2                                    # Number of rows in the sensor grid
-GridcolsSensors = 2                                     # Number of columns in the sensor grid
+GridrowsSensors = 2                                 # Number of rows in the sensor grid    (X)
+GridcolsSensors = 3                                    # Number of columns in the sensor grid (Y)
 NSensors = GridcolsSensors * GridrowsSensors            # Total number of sensors
 SensorCutMargin = SensorGridMargin * 0.2                # Additional margin for cutting or adjustment
 
 # Sensor Dimensions
-SensorLengthX = 3.0  
-SensorLengthY = 2.0  
-SensorLengthZ = 1  
-SensorBoxTolerance = 0.1
+SensorLength = 3.0  
+SensorWidth = 2.0  
+SensorHeigth = 1  
 
 
 # ---- Stretch test ----
-displacement = -30.5
-
+displacement = -0.5
 
 '''
 ------------------------------------------------------------------------------------
@@ -109,16 +102,22 @@ def generate_grid(length, width, margin, rows, cols):
     return np.column_stack((X.ravel(), Y.ravel()))
 
 
-def getBoxroiCoords(length, width, tolerance, marginX, marginZ):
+def getBoxroiCoords(centers, lengths, tolerance):
     '''Generates the coordinates for creating a BoxROI'''
-    max_x =  length/2 + tolerance  
-    min_x = -(marginX + tolerance) 
-    max_y =  width/2 + tolerance 
-    min_y = -(marginZ + width/2 + tolerance) 
-    max_z =  tolerance 
-    min_z = -tolerance 
-    
-    return [max_x, max_y, max_z, min_x, min_y, min_z]
+    lx, ly, lz = lengths
+    boxes = []
+
+    for px, py, pz in centers:
+        box = [
+            px - (lx / 2 + tolerance),
+            py - (ly / 2 + tolerance),
+            pz - (lz / 2 + tolerance),
+            px + (lx / 2 + tolerance),
+            py + (ly / 2 + tolerance),
+            pz + (lz / 2 + tolerance)
+        ]
+        boxes.append(box)
+    return boxes
 
 
 # ---- Generate grid points on the XY plane for magnets and sensors----
@@ -127,13 +126,11 @@ SensorGridPoints = generate_grid(MagneticSkinLength, MagneticSkinWidth, GridMarg
 
 
 # ---- Magnets and Sensors centers 3D coordinates ---- 
-MagnetCenters = [[px, py, 2*MagneticSkinHeight/3] for px, py in MagnetGridPoints] 
-SensorCenters = [[px, py,  MagneticSkinHeight/3] for px, py in SensorGridPoints]  # - ArticulationAxis in z axis for Simulationthumbfinger  
+MagnetCenters = [[px, py, 3*MagneticSkinHeight/4] for px, py in MagnetGridPoints] 
+SensorCenters = [[px, py,  MagneticSkinHeight/4] for px, py in SensorGridPoints]  # - ArticulationAxis in z axis for Simulationthumbfinger  
 
 
-
-
-
+print(SensorCenters)
 # ---- Rigid Articulation center 3D coordinates ---- 
 rigidArticulationCenter =  np.array([[-MagneticSkinLength/2, 0, 0]])
 
@@ -146,71 +143,56 @@ rigidObjects = rigidObjects.tolist()
 # ---- Fixed BoxROI coordinates ----
 
 # Defines a fixed region of interest (ROI) box with margins around the magnetic skin (rigid)
-BoxROIFixCoords = getBoxroiCoords(MagneticSkinLength, MagneticSkinWidth, BoxROITolerance, marginX = -13, marginZ = 0) 
+BoxROIFixCoords = getBoxroiCoords(centers = [[MagneticSkinLength/3.5, 0, 0]] , #3.5
+                                  lengths = [MagneticSkinLength/2.3, MagneticSkinWidth, BoxTolerance], #2.3
+                                  tolerance = BoxTolerance)
 
 # Defines a rigidified region box on the opposite side (articulation)
-BoxROIFixCoords1 = getBoxroiCoords(-MagneticSkinLength, -MagneticSkinWidth, BoxROITolerance, marginX = 0, marginZ = 0) 
+BoxROIFixCoordsArt = getBoxroiCoords(centers = [[-MagneticSkinLength/4  , 0, 0]] , 
+                                     lengths = [MagneticSkinLength/2, MagneticSkinWidth, BoxTolerance],
+                                     tolerance = BoxTolerance)
+
 
 # Rigidified region for the thumb finger
-BoxROIFixCoordsThumb = getBoxroiCoords(-MagneticSkinLength, -MagneticSkinWidth, BoxROITolerance, marginX = -10, marginZ = 0) 
+BoxROIFixCoordsThumb = getBoxroiCoords(centers = [[-MagneticSkinLength/6.5, 0, 0]] , 
+                                       lengths = [MagneticSkinLength/1.4, MagneticSkinWidth, BoxTolerance],
+                                       tolerance = BoxTolerance)
+
+
+# ---- BoxROI coordinates for sensors and magnets----
+SensorBoxCoords = getBoxroiCoords(centers = SensorCenters, 
+                                  lengths = (SensorLength, SensorWidth, SensorHeigth), 
+                                  tolerance = BoxTolerance)
+
+MagnetBoxCoords = getBoxroiCoords(centers = MagnetCenters, 
+                                  lengths = (MagnetSide, MagnetSide, MagnetSide), 
+                                  tolerance = BoxTolerance)
 
 
 
-
-# ---- BoxROI coordinates for sensors ----
-
-SensorBoxCoords = []
-
-for point in SensorCenters:
-    px, py, pz = point
-
-    box = [
-        px - (SensorLengthX / 2 + SensorBoxTolerance),  # min X
-        py - (SensorLengthY / 2 + SensorBoxTolerance),  # min Y
-        pz - (SensorLengthZ / 2 + SensorBoxTolerance),  # min Z
-        px + (SensorLengthX / 2 + SensorBoxTolerance),  # max X
-        py + (SensorLengthY / 2 + SensorBoxTolerance),  # max Y
-        pz + (SensorLengthZ / 2 + SensorBoxTolerance)   # max Z
-    ]
-    SensorBoxCoords.append(box)
-
-
-
-# ---- BoxROI coordinates for magnets ----
-MagnetBoxCoords = []
-
-# Add a BoxROI for each magnet in the grid, defining a bounding box around each magnet center
-for point in MagnetCenters :
-    px, py, pz = point  
-    
-    box = [
-        px - (MagnetSide / 2 + MagnetBoxTolerance),  # min X coordinate of the magnet box
-        py - (MagnetSide / 2 + MagnetBoxTolerance),  # min Y coordinate
-        pz - (MagnetSide / 2 + MagnetBoxTolerance),  # min Z coordinate
-        px + (MagnetSide / 2 + MagnetBoxTolerance),  # max X coordinate
-        py + (MagnetSide / 2 + MagnetBoxTolerance),  # max Y coordinate
-        pz + (MagnetSide / 2 + MagnetBoxTolerance)   # max Z coordinate
-    ]    
-    # Append the bounding box for this magnet to the list
-    MagnetBoxCoords.append(box)
-
-
-rigidObjectsBoxCoordsThumb = np.vstack([ [BoxROIFixCoordsThumb], MagnetBoxCoords, SensorBoxCoords])
+ObjectsBoxCoords = np.vstack([ MagnetBoxCoords, SensorBoxCoords])
+rigidObjectsBoxCoordsThumb = np.vstack([BoxROIFixCoordsThumb, MagnetBoxCoords, SensorBoxCoords])
 rigidObjectsBoxCoordsThumb = rigidObjectsBoxCoordsThumb.tolist()
-rigidObjectsBoxCoords = np.vstack([ [BoxROIFixCoords1], MagnetBoxCoords, SensorBoxCoords])
+
+rigidObjectsBoxCoords = np.vstack([ BoxROIFixCoordsArt, MagnetBoxCoords, SensorBoxCoords])
 rigidObjectsBoxCoords = rigidObjectsBoxCoords.tolist()
 
 
 # --- IndexPairs for SubsetMultiMapping ---
-IndexPairs = [0, 1]  # Fixed region mapping
-for i in range(NMagnets + NSensors):
-    IndexPairs.extend([1, i])  # Map each magnet
-# print(IndexPairs)
-# # ---- Index for Sensor Centers ---- 
-# indexPerPointSensor = []
-# for center in SensorCenters:
-#     if center[0] > MagnetBoxTolerance:
-#         index = 0
-#     else:
-#         index = 1
-#     indexPerPointSensor.append(index)     
+'''Format: [source_index, DOF_index_in_source, source_index, DOF_index_in_source, ...]'''
+
+IndexPairs = [[0, 1]] + [[1, i] for i in range(NMagnets)] # Mapping indices: [Fixed region, first object, ...]
+IndexPairs = [idx for pair in IndexPairs for idx in pair]  # Map each Magnets
+
+# ---- Add Index for Sensor Centers ---- 
+indexPerPointSensor = []
+indexSubSetMapSensor = []
+for i, center in enumerate(SensorCenters):
+    if center[0] > BoxTolerance:
+        index = 0
+    else:
+        index = 1
+    indexPerPointSensor.append((index))
+    indexSubSetMapSensor.append((2, i))
+
+IndexPairs += [idx for pair in indexSubSetMapSensor for idx in pair]  # Map each Sensors

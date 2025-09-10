@@ -73,7 +73,7 @@ class Controller(Sofa.Core.Controller):
         
         self.RootNode = kwargs['RootNode']
         self.RigidMO = kwargs['RigidMO']
-        self.SensorMO = kwargs['SensorMO']
+        # self.SensorMO = kwargs['SensorMO']
         self.CFF = kwargs['CFF']
         self.CFFSphereROI = kwargs['CFFSphereROI']  
         self.ContactNodeMO = kwargs["ContactNodeMO"]
@@ -533,7 +533,7 @@ def createScene(rootNode):
                                   RootNode=rootNode, 
                                   RigidMO=RigidMO,
                                   visuMO = visuMO,
-                                  SensorMO= SensorMO,
+                                #   SensorMO= SensorMO,
                                   ContactNodeMO = ContactNodeMO,
                                   CFF=CFF,
                                   CFFSphereROI=CFFSphereROI)) 

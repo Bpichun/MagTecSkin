@@ -35,7 +35,7 @@ file_path = "campo_global.txt"
 
 while True:
     try:
-        if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+        if os.path.exists(file_path) and os .path.getsize(file_path) > 0:
             data = np.loadtxt(file_path)
 
             if data.size == 0:
@@ -44,7 +44,7 @@ while True:
             if data.ndim == 1:
                 row = data
             else:
-                row = data[0]
+                row = data[1]
 
             x_vals.append(row[0])
             y_vals.append(row[1])

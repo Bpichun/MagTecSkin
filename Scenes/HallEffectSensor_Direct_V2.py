@@ -30,7 +30,7 @@ import Geometries.Constants as Const
 import rigidification
 Lista_sensores = []
 
-def CalcularB(Distancia_r_mm,Direccion_momento_magnetico,mu_mag_delGráfico): #
+def CalcularB(Distancia_r_mm, Direccion_momento_magnetico, mu_mag_delGráfico): #
             # Definición de variables
             Distancia_r = np.array(Distancia_r_mm)
             length_r = np.linalg.norm(Distancia_r) 

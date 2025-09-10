@@ -75,7 +75,7 @@ class Controller(Sofa.Core.Controller):
         
         self.RootNode = kwargs['RootNode']
         self.RigidMO = kwargs['RigidMO']
-        self.SensorMO = kwargs['SensorMO']
+        # self.SensorMO = kwargs['SensorMO']
         self.CFF = kwargs['CFF']
         self.CFFSphereROI = kwargs['CFFSphereROI']  
         self.ContactNodeMO = kwargs["ContactNodeMO"]
@@ -93,11 +93,6 @@ class Controller(Sofa.Core.Controller):
         self.t += 1  
     
         
-    
-    def MoveServo(self):   
-        pos = self.ServoMO.rest_position.value.copy()  
-        pos[0][0] = 10  
-        self.ServoMO.rest_position.value = pos
         
     def mapCapCoordinatesTo3DCoords(self):
         WeightList = np.loadtxt("Touch/WeightList.txt")
@@ -129,8 +124,8 @@ class Controller(Sofa.Core.Controller):
             self.MoveCFFSphereROI()
         self.CFF.totalForce.value = Const.identadorForce
         # ---- Save current pose of the Sensor and Magnets ----
-        np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value[1:, :]) 
-        np.savetxt("SensorPose_Direct.txt", self.SensorMO.position.value)
+        np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value[1:Const.NMagnets+1, :]) 
+        np.savetxt("SensorPose_Direct.txt", self.RigidMO.position.value[Const.NMagnets+1:, :]) 
   
         # print(f"MagnetPose: {self.RigidMO.position.value}")       
         
@@ -149,19 +144,27 @@ class Controller(Sofa.Core.Controller):
         print('------------------------------------------------')
 
 
+        MagnetPose = self.RigidMO.position.value[1:Const.NMagnets+1, :]
+        SensorPose = self.RigidMO.position.value[Const.NMagnets+1: , :]
+        print(f'MagnetPose : {MagnetPose}')
+        print(f'SensorPose : {SensorPose}')
+        
+
+        MagnetPosition = MagnetPose[:, :3]
+        SensorPosition = SensorPose[:, :3]
          # ---- Extract 3D positions of magnets and sensors ----
-        MagnetPosition = self.RigidMO.position.value[1:, :3]
+        # MagnetPosition = self.RigidMO.position.value[1:, :3]
         # print('Lista imanes:', MagnetPosition)
     
-        SensorPosition = self.SensorMO.position.value[:, :3]
+        # SensorPosition = self.SensorMO.position.value[:, :3]
         # print('SensorPosition:', SensorPosition)
         GlobalMagneticField = []
 
-        for j in range(Const.NMagnets):
+        for j in range(Const.NSensors):
             
             LocalMagneticField = []
             # print(f'Distancia sensor {j} - imanes:', Dist_Sensor)
-            quat_sensor = self.SensorMO.position.value[j, 3:7]
+            quat_sensor = SensorPose[j, 3:7]
             MiR_Sensor = R.from_quat(quat_sensor)
 
             R_sensor_inv = R.from_quat(quat_sensor).inv()
@@ -173,7 +176,7 @@ class Controller(Sofa.Core.Controller):
             for i in range(Const.NMagnets):
                 Dist_Sensor_global = SensorPosition[j] - MagnetPosition[i]
                 # pos_iman = Lista_imanes[i]
-                
+                print(f'Distancia sensor {j} a magnet {i}: {Dist_Sensor_global}')
                 delta_local = rotation_matrix_sensor_inv @ Dist_Sensor_global
                 
                 # print(f'Distancia sensor {j} a {i} - imanes:', delta_local)
@@ -397,20 +400,20 @@ def createScene(rootNode):
     
     
     #Add the sensors 
-    # nominalPoseSensors = [] 
-    # TipOrientation = [0, 0, 0, 1]
-    # for center in Const.SensorCenters:
-    #     CurrentPose = center + TipOrientation
-    #     nominalPoseSensors  += CurrentPose
+    nominalPoseSensors = [] 
+    TipOrientation = [0, 0, 0, 1]
+    for center in Const.SensorCenters:
+        CurrentPose = center + TipOrientation
+        nominalPoseSensors  += CurrentPose
     
-    # sensorCenter = servoWheel.addChild("sensorCenter")
-    # SensorMO = sensorCenter.addObject("MechanicalObject", name="dofs", template="Rigid3",
-    #                      position=nominalPoseSensors,
-    #                      showObject=True, showObjectScale=Const.MagneticSkinHeight/2, showIndices=False, showIndicesScale=0.03)
-    # sensorCenter.addObject("UniformMass", totalMass=0.01)
-    # sensorCenter.addObject("EulerImplicitSolver")
-    # sensorCenter.addObject("SparseLDLSolver")
-    # sensorCenter.addObject("RigidMapping", input="@Simulation/Articulation/ServoWheel/dofs", rigidIndexPerPoint=Const.indexPerPointSensor)
+    sensorCenter = servoWheel.addChild("sensorCenter")
+    SensorMO = sensorCenter.addObject("MechanicalObject", name="dofs", template="Rigid3",
+                         position=nominalPoseSensors,
+                         showObject=False, showObjectScale=Const.MagneticSkinHeight/2, showIndices=False, showIndicesScale=0.03)
+    sensorCenter.addObject("UniformMass", totalMass=0.01)
+    sensorCenter.addObject("EulerImplicitSolver")
+    sensorCenter.addObject("SparseLDLSolver")
+    sensorCenter.addObject("RigidMapping", input="@Simulation/Articulation/ServoWheel/dofs", rigidIndexPerPoint=Const.indexPerPointSensor,  globalToLocalCoords=True)
 
     
     RigidifiedNode =  RigidNode.addChild('RigidifiedNode')   
@@ -423,9 +426,10 @@ def createScene(rootNode):
     # ---- SubsetMultiMapping to connect ServoWheel and freeCenter to rigid tips ----
     RigidNode.addObject('SubsetMultiMapping',
                           name="mapping",
-                          input=['@../dofs', '@/Simulation/freeCenter/dofs'],
+                          input=['@Simulation/Articulation/ServoWheel/dofs',
+                                 '@/Simulation/freeCenter/dofs', 
+                                 '@Simulation/Articulation/ServoWheel/sensorCenter/dofs'],
                           output='@./', indexPairs= [Const.IndexPairs])
-    
     
     
     # --- Define Articulation center ----
@@ -433,7 +437,7 @@ def createScene(rootNode):
     articulationCenter.addObject('ArticulationCenter', parentIndex=0, childIndex=1, posOnParent=[0., 0., 0.], posOnChild=[0., 0., 0.])
     articulation = articulationCenter.addChild('Articulations')
     articulation.addObject('Articulation', translation=False, rotation=True, rotationAxis=[0, 1, 0], articulationIndex=0)
-    articulationAngle.addObject('ArticulatedHierarchyContainer')
+    # articulationAngle.addObject('ArticulatedHierarchyContainer')
     
     
     
@@ -505,7 +509,7 @@ def createScene(rootNode):
     rootNode.addObject(Controller(name="ActuationController", 
                                   RootNode=rootNode, 
                                   RigidMO=RigidMO,
-                                  SensorMO= SensorMO,
+                                #   SensorMO= SensorMO,
                                   ContactNodeMO = ContactNodeMO,
                                   CFF=CFF,
                                   CFFSphereROI=CFFSphereROI)) 
