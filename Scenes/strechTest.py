@@ -141,7 +141,7 @@ class SinusoidalController(Sofa.Core.Controller):
 
     def onAnimateBeginEvent(self, event):
 
-        displacement = -5* np.sin(self.t *0.3)
+        displacement = -0.1* np.sin(self.t *0.3)
         print(displacement )
         grab_node = self.node.ExternalRefNode
         if grab_node is None:
@@ -176,17 +176,17 @@ class SinusoidalController(Sofa.Core.Controller):
 
         # ---- Extract pose of magnets and sensors ----
         MagnetPose = self.RigidMO.position.value[0:Const.NMagnets, :]
-        print('MagnetPose:', MagnetPose)
+        # print('MagnetPose:', MagnetPose)
 
         SensorPose = self.RigidMO.position.value[Const.NMagnets:, :]
-        print('SensorPose:', SensorPose)
+        # print('SensorPose:', SensorPose)
 
          # ---- Extract 3D positions of magnets and sensors ----
         MagnetPosition = MagnetPose[:, :3]
-        print('Lista imanes:', MagnetPosition)
+        # print('Lista imanes:', MagnetPosition)
     
         SensorPosition = SensorPose[:,:3]
-        print('SensorPosition:', SensorPosition)
+        # print('SensorPosition:', SensorPosition)
         GlobalMagneticField = []
 
         for j in range(Const.NSensors):
@@ -226,107 +226,109 @@ class SinusoidalController(Sofa.Core.Controller):
             # print("LocalMagneticField: ", LocalMagneticField) 
             TotalMagneticField = np.sum(LocalMagneticField, axis=0)
             GlobalMagneticField.append(TotalMagneticField)
-            print(f"GlobalMagneticField {j}", TotalMagneticField )
+            # print(f"GlobalMagneticField {j}", TotalMagneticField )
         np.savetxt("campo_global.txt", GlobalMagneticField)
 
-class FixedController(Sofa.Core.Controller):
-    # def __init__(self, node, displacement=Const.displacement):
-    def __init__(self, *args, **kwargs):
-        Sofa.Core.Controller.__init__(self, *args, **kwargs)
-        print(" Python::__init__::" + str(self.name.value))
-        self.node = kwargs['node']
-        self.RigidMO = kwargs['RigidMO']
-        self.displacement  = kwargs['displacement']  
-        self.initialized = False
+# class FixedController(Sofa.Core.Controller):
+#     # def __init__(self, node, displacement=Const.displacement):
+#     def __init__(self, *args, **kwargs):
+#         Sofa.Core.Controller.__init__(self, *args, **kwargs)
+#         print(" Python::__init__::" + str(self.name.value))
+#         self.node = kwargs['node']
+#         self.RigidMO = kwargs['RigidMO']
+#         self.displacement  = kwargs['displacement']  
+#         self.initialized = False
 
-    def onAnimateBeginEvent(self, event):
-        if self.initialized:
-            return  
+#     def onAnimateBeginEvent(self, event):
+#         if self.initialized:
+#             return  
 
-        grab_node = self.node.ExternalRefNode
-        if grab_node is None:
-            return
-        grab = grab_node.getObject('ExternalMO')
-        if grab is None:
-            return
+#         grab_node = self.node.ExternalRefNode
+#         if grab_node is None:
+#             return
+#         grab = grab_node.getObject('ExternalMO')
+#         if grab is None:
+#             return
 
-        currentValue = list(grab.translation.value)
-        currentValue[0] = self.displacement  
-        grab.translation.value = currentValue
-        grab.reinit()
-        # self.initialized = True
+#         currentValue = list(grab.translation.value)
 
-        np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value[0:Const.NMagnets, :]) 
-        np.savetxt("SensorPose_Direct.txt", self.RigidMO.position.value[Const.NMagnets:, :]) 
+#         print('currentValue', currentValue)
+#         currentValue[0] = self.displacement  
+#         grab.translation.value = currentValue
+#         grab.reinit()
+#         # self.initialized = True
+
+#         np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value[0:Const.NMagnets, :]) 
+#         np.savetxt("SensorPose_Direct.txt", self.RigidMO.position.value[Const.NMagnets:, :]) 
         
-        # print(f"MagnetPose: {self.RigidMO.position.value}")       
+#         # print(f"MagnetPose: {self.RigidMO.position.value}")       
         
         
-       # ----Load saved positions----
-        try:
-            magnet_pose = np.loadtxt("MagnetPose_Direct.txt")
-            sensor_pose = np.loadtxt("SensorPose_Direct.txt")
-        except:
-            print("Error reading pose files")
-            return
+#        # ----Load saved positions----
+#         try:
+#             magnet_pose = np.loadtxt("MagnetPose_Direct.txt")
+#             sensor_pose = np.loadtxt("SensorPose_Direct.txt")
+#         except:
+#             print("Error reading pose files")
+#             return
     
-        print('------------------------------------------------')
+#         print('------------------------------------------------')
 
 
-        # ---- Extract pose of magnets and sensors ----
-        MagnetPose = self.RigidMO.position.value[0:Const.NMagnets, :]
-        print('MagnetPose:', MagnetPose)
+#         # ---- Extract pose of magnets and sensors ----
+#         MagnetPose = self.RigidMO.position.value[0:Const.NMagnets, :]
+#         # print('MagnetPose:', MagnetPose)
 
-        SensorPose = self.RigidMO.position.value[Const.NMagnets:, :]
-        print('SensorPose:', SensorPose)
+#         SensorPose = self.RigidMO.position.value[Const.NMagnets:, :]
+#         # print('SensorPose:', SensorPose)
 
-         # ---- Extract 3D positions of magnets and sensors ----
-        MagnetPosition = MagnetPose[:, :3]
-        print('Lista imanes:', MagnetPosition)
+#          # ---- Extract 3D positions of magnets and sensors ----
+#         MagnetPosition = MagnetPose[:, :3]
+#         # print('Lista imanes:', MagnetPosition)
     
-        SensorPosition = SensorPose[:,:3]
-        print('SensorPosition:', SensorPosition)
-        GlobalMagneticField = []
+#         SensorPosition = SensorPose[:,:3]
+#         # print('SensorPosition:', SensorPosition)
+#         GlobalMagneticField = []
 
-        for j in range(Const.NSensors):
+#         for j in range(Const.NSensors):
             
-            LocalMagneticField = []
-            # print(f'Distancia sensor {j} - imanes:', Dist_Sensor)
-            quat_sensor = SensorPose[j, 3:7]
-            MiR_Sensor = R.from_quat(quat_sensor)
+#             LocalMagneticField = []
+#             # print(f'Distancia sensor {j} - imanes:', Dist_Sensor)
+#             quat_sensor = SensorPose[j, 3:7]
+#             MiR_Sensor = R.from_quat(quat_sensor)
 
-            R_sensor_inv = R.from_quat(quat_sensor).inv()
-            rotation_matrix_sensor_inv = R_sensor_inv.as_matrix()
-            # rotation_Matrix_Sensor = MiR_Sensor.as_matrix()
-            # print(f"i : {j}, quat_iman{quat_sensor} ")
-            # print(f' sensor : {j}')
-            # print('--------------------------------------')
-            for i in range(Const.NMagnets):
-                Dist_Sensor_global = SensorPosition[j] - MagnetPosition[i]
-        #         # pos_iman = Lista_imanes[i]
+#             R_sensor_inv = R.from_quat(quat_sensor).inv()
+#             rotation_matrix_sensor_inv = R_sensor_inv.as_matrix()
+#             # rotation_Matrix_Sensor = MiR_Sensor.as_matrix()
+#             # print(f"i : {j}, quat_iman{quat_sensor} ")
+#             # print(f' sensor : {j}')
+#             # print('--------------------------------------')
+#             for i in range(Const.NMagnets):
+#                 Dist_Sensor_global = SensorPosition[j] - MagnetPosition[i]
+#         #         # pos_iman = Lista_imanes[i]
                 
-                delta_local = rotation_matrix_sensor_inv @ Dist_Sensor_global
+#                 delta_local = rotation_matrix_sensor_inv @ Dist_Sensor_global
                 
-        #         # print(f'Distancia sensor {j} a {i} - imanes:', delta_local)
-                quat_Magnet = MagnetPose[i, 3:7]
+#         #         # print(f'Distancia sensor {j} a {i} - imanes:', delta_local)
+#                 quat_Magnet = MagnetPose[i, 3:7]
                 
-                # print(f"i : {i}, quat_iman{quat_Magnet} ")
-                MiR_Magnet = R.from_quat(quat_Magnet)  # (x, y, z, w)
+#                 # print(f"i : {i}, quat_iman{quat_Magnet} ")
+#                 MiR_Magnet = R.from_quat(quat_Magnet)  # (x, y, z, w)
                 
-                rotation_Matrix_Magnet = MiR_Magnet.as_matrix() 
+#                 rotation_Matrix_Magnet = MiR_Magnet.as_matrix() 
                 
-                rotation_Matrix = MiR_Sensor.inv().as_matrix() @ rotation_Matrix_Magnet
+#                 rotation_Matrix = MiR_Sensor.inv().as_matrix() @ rotation_Matrix_Magnet
 
-                Direccion_momento_magnetico = rotation_Matrix[:, 2]
+#                 Direccion_momento_magnetico = rotation_Matrix[:, 2]
                 
-                # print(f"Direccion momento magnetico iman {i+1} ", Direccion_momento_magnetico)
+#                 # print(f"Direccion momento magnetico iman {i+1} ", Direccion_momento_magnetico)
 
-                LocalMagneticField.append(calculate_B_field(delta_local, Direccion_momento_magnetico, Const.mu_magnitude))
-            # print("LocalMagneticField: ", LocalMagneticField) 
-            TotalMagneticField = np.sum(LocalMagneticField, axis=0)
-            GlobalMagneticField.append(TotalMagneticField)
-            print(f"GlobalMagneticField {j}", TotalMagneticField )
-        np.savetxt("campo_global.txt", GlobalMagneticField)
+#                 LocalMagneticField.append(calculate_B_field(delta_local, Direccion_momento_magnetico, Const.mu_magnitude))
+#             # print("LocalMagneticField: ", LocalMagneticField) 
+#             TotalMagneticField = np.sum(LocalMagneticField, axis=0)
+#             GlobalMagneticField.append(TotalMagneticField)
+#             # print(f"GlobalMagneticField {j}", TotalMagneticField )
+#         np.savetxt("campo_global.txt", GlobalMagneticField)
 
 
 

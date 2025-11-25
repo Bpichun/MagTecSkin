@@ -19,12 +19,42 @@ from splib3.animation import animate
 import Geometries.Constants as Const
 import rigidification
 
+
 dirPath = os.path.dirname(os.path.abspath(__file__)) + '/'
 path = os.path.dirname(os.path.abspath(__file__))+'/Meshes/'
 MeshesPath = os.path.dirname(os.path.abspath(__file__))+'/Geometries/'
 GeneratedMeshesPath = os.path.dirname(os.path.abspath(__file__))+'/Geometries/'
 TempPath = os.path.dirname(os.path.abspath(__file__))+'/Temp/'
 
+# offsetX = 10.0
+# offsetZ = 4
+
+# SmallBox = [
+#     3 + offsetX, 0.5, 0.5 + offsetZ,   # x_max, y_max, z_max
+#    -0.5 + offsetX,-0.5,-0.5 + offsetZ    # x_min, y_min, z_min
+# ]
+
+def normal_trajectory(points):
+
+    pts = np.array(points)
+    x_vals = np.unique(pts[:, 0])
+
+    trayectoria = []
+    invertir = False
+
+    for x in x_vals:
+        columna = pts[pts[:, 0] == x]
+        columna = columna[np.argsort(columna[:, 1])]
+        if invertir:
+            columna = columna[::-1]
+
+        for p in columna:
+            x_, y_ = p
+            trayectoria.append([x_, y_, Const.MagneticSkinHeight])  
+
+        invertir = not invertir
+
+    return np.array(trayectoria)
 
 
 def calculate_B_field(distance_r_mm, magnetic_moment_direction, mu_magnitude):
@@ -37,7 +67,7 @@ def calculate_B_field(distance_r_mm, magnetic_moment_direction, mu_magnitude):
     - mu_magnitude: Magnitude of the magnetic moment (e.g., in A·m²).
 
     Returns:
-    - B_field_pT: Magnetic field vector at the point, in picoTesla (pT).
+    - B_field_pT: Magnetic field vector at the point.
     """
 
     # Convert the distance vector to an array and compute its norm
@@ -76,56 +106,147 @@ class Controller(Sofa.Core.Controller):
         self.RigidMO = kwargs['RigidMO']
         self.CFF = kwargs['CFF']
         self.CFFSphereROI = kwargs['CFFSphereROI']  
+        self.CFFMO = kwargs['CFFMO']  
         self.articulationAngle = kwargs['articulationAngle']
         self.t = 0
         self.runArticulation = True
         self.dt = 0.01
+        self.Kp = 100
+        self.Ki = 10000000
+        self.Kd = 1e2
+        self.setpoint = 3.5
+        self.previous_error = 0
+        self.integral = 0
+        self.closest_point = None
+        self.closest_index = None
 
         print('Finished Init')
+        displacement = 1
+
+        grab_node = self.RootNode.ExternalRefNode
+        if grab_node is None:
+            return
+        grab = grab_node.getObject('ExternalMO')
+        if grab is None:
+            return
+
+        currentValue = list(grab.translation.value)
+        currentValue[2] = displacement   
+
+        grab.translation.value = currentValue
+        grab.reinit()
+        # self.t += 1 
+
+
+    def pid_compute(self, variable, dt):
+        error = self.setpoint - variable    
+        P_out = self.Kp * error
+        self.integral += error * dt
+        I_out = self.Ki * self.integral
+        derivative = (error - self.previous_error) / dt
+        D_out = self.Kd * derivative
+        output = (P_out + I_out + D_out)
+        self.previous_error = error
+        
+        return output
 
         # self.ModelNode = self.RootNode.solverNode.deformableNode.model  
 
     def MoveCFFSphereROI(self):   
-        x = -20
-        y = Const.MagneticSkinWidth/3 * np.sin(self.t * 0.05)
-        z = Const.MagneticSkinHeight
-        self.CFFSphereROI.centers = [[x, y, z]]  
-        self.t += 1  
 
+        puntos = np.array(Const.MagnetGridPoints)
+
+        if Const.ForceTest == "NormalForce":
+            trayectoria = normal_trajectory(puntos) 
+            n_points = len(trayectoria)
+            frames_per_point = 170 
+
+            point_index = int((self.t // frames_per_point) % n_points)
+            pos = trayectoria[point_index]
+
+            self.CFFSphereROI.centers = [pos.tolist()]
+
+            self.t += 1
        
     def animation(self, target, factor):
-
         angle_start = np.deg2rad(Const.ArticulationAngleDeg)
         angle_end   = np.deg2rad(-Const.ArticulationAngleDeg)
         angle = angle_start + (angle_end - angle_start) * 0.5 * (1 - np.sin(2 * np.pi * factor))
         target.dofs.rest_position[0][0] = angle   
         
-
     def updateArticulation(self):
         self.t += self.dt
         if Const.runAnimateArticulation == True:
             self.animation(self.articulationAngle, self.t % 2.0)
 
+    def selectCenterPoint(self, positionSphere, roi_indices, positions):
+        roi_positions = positions[roi_indices]
+        distances = np.linalg.norm(roi_positions - positionSphere, axis=1)
+        min_index = np.argmin(distances)
+        closest_point = roi_positions[min_index]
+        closest_index = int(roi_indices[min_index])  
+
+        return closest_point, closest_index
 
 
     def onAnimateBeginEvent(self, eventType):
-        self.updateArticulation()
 
+        self.updateArticulation()
+        roi_indices = self.CFFSphereROI.indices.value
+        positions = self.CFFMO.position
+        roi_positions = positions[roi_indices]
+
+
+        CurrentPositionSphere = np.array(self.CFFSphereROI.centers.value[0])
+        self.closest_point, self.closest_index = self.selectCenterPoint(
+                                                                            positionSphere=CurrentPositionSphere, 
+                                                                            roi_indices=roi_indices, 
+                                                                            positions=positions
+                                                                        )
+        # if self.closest_point is None:
+
+
+
+        # variable = np.mean(roi_positions[:, 2])
+        print('closet', self.closest_point)
+        print('currentPositionSphere:',  CurrentPositionSphere )
+        variable = self.closest_point[2]
+        print('variablepositionz:', variable)
+    
+
+        error =  self.setpoint- variable
+
+        tol = 0.005  
+        if abs(error) < tol:
+            if self.setpoint == 3.5:
+                self.setpoint = 4   
+            else:
+                self.setpoint = 3.5   
+        
+        
+        # Calculate the force with PID
+        force_z = self.pid_compute(variable, self.dt)
+        force_clamped = np.clip(force_z, -8.05e5, 1e10)
+
+        self.CFF.indices = roi_indices.tolist()
+        self.CFF.totalForce.value = [0, 0, force_clamped]
+
+
+        print('error:', self.setpoint- variable)
+        print('force:', self.CFF.totalForce.value)
+        
 
         # Move Sphere ROI and apply force 
 
-        if Const.indenterMotion  == True and self.t > 308:
+        if Const.indenterMotion  == True:
             self.MoveCFFSphereROI()
-            # print('hola ')
-            self.runArticulation = False
-
-            
-            self.CFF.totalForce.value = Const.identadorForce
+            # self.runArticulation = False
+            # self.CFF.totalForce.value = Const.identadorForce
         self.t += 1
         # ---- Save current pose of the Sensor and Magnets ----
         np.savetxt("MagnetPose_Direct.txt", self.RigidMO.position.value[1:Const.NMagnets+1, :]) 
         np.savetxt("SensorPose_Direct.txt", self.RigidMO.position.value[Const.NMagnets+1:, :]) 
-        
+
         # print(f"MagnetPose: {self.RigidMO.position.value}")       
         
         
@@ -145,7 +266,7 @@ class Controller(Sofa.Core.Controller):
         # print('MagnetPose:', MagnetPose)
 
         SensorPose = self.RigidMO.position.value[Const.NMagnets+1:, :]
-        print('SensorPose:', SensorPose)
+        # print('SensorPose:', SensorPose)
 
          # ---- Extract 3D positions of magnets and sensors ----
         MagnetPosition = MagnetPose[:, :3]
@@ -218,8 +339,7 @@ def createScene(rootNode):
         'Sofa.Component.Topology.Container.Constant',
         'Sofa.Component.Visual',
         'Sofa.GL.Component.Rendering3D',
-        'Sofa.GUI.Component',
-
+        'Sofa.GUI.Component'
     ]
 
     
@@ -239,6 +359,8 @@ def createScene(rootNode):
     VolumetricMeshPath = GeneratedMeshesPath + 'MagneticSkin.vtk'
     
     SurfaceMeshPath = GeneratedMeshesPath + 'MagneticSkin.stl'
+
+    # SurfaceMeshPathForce = GeneratedMeshesPath + 'MagneticSkin_withoutMagnets.stl'
         
     #----------------------
     # Goal Node
@@ -327,7 +449,7 @@ def createScene(rootNode):
     articulationAngle.addObject('ArticulatedHierarchyContainer')
 #     articulationAngle.addObject("EulerImplicitSolver", rayleighStiffness=0.1, rayleighMass=0.1)
 #     articulationAngle.addObject("CGLinearSolver", iterations=200, tolerance=1e-12, threshold=1e-12)
-# # 
+
     # ---- ServoWheel ----
     servoWheel = articulationAngle.addChild('ServoWheel')
     servoWheel.addObject('MechanicalObject', name='dofs', template='Rigid3',
@@ -336,15 +458,13 @@ def createScene(rootNode):
                          showObject = False, showObjectScale=4)
     
 
-    
     # ---- Mapping articulation control to servo and body -----
     servoWheel.addObject('ArticulatedSystemMapping', input1='@../dofs', input2='@../../ServoBody/dofs', output='@./')
 
    
-
     RigidNode = servoWheel.addChild('RigidNode')
      
-    
+
     nominal_pose = [] 
     TipOrientation = [0, 0, 0, 1]       
     
@@ -403,7 +523,7 @@ def createScene(rootNode):
     RigidNode.addObject('SubsetMultiMapping',
                           name="mapping",
                           input=['@Simulation/Articulation/ServoWheel/dofs',
-                                 '@/Simulation/freeCenter/dofs', 
+                                 '@Simulation/freeCenter/dofs', 
                                  '@Simulation/Articulation/ServoWheel/sensorCenter/dofs'],
                           output='@./', indexPairs= [Const.IndexPairs])
     
@@ -412,7 +532,7 @@ def createScene(rootNode):
     articulationCenter = articulationAngle.addChild('ArticulationCenter')
     articulationCenter.addObject('ArticulationCenter', parentIndex=0, childIndex=1, posOnParent=[0., 0., 0.], posOnChild=[0., 0., 0.])
     articulation = articulationCenter.addChild('Articulations')
-    articulation.addObject('Articulation', translation=False, rotation=True, rotationAxis=[0, 1, 0], articulationIndex=0)
+    articulation.addObject('Articulation', translation=False, rotation=True, rotationAxis=[0, 0, 1], articulationIndex=0)
 
 
     
@@ -438,6 +558,11 @@ def createScene(rootNode):
     model.addObject('BoxROI', name='BaseROI', box=Const.BoxROIFixCoords, drawBoxes=True, position="@tetras.rest_position", tetrahedra="@container.tetrahedra")            
     model.addObject('RestShapeSpringsForceField', points='@BaseROI.indices', stiffness='1e12')                
     model.addObject("SubsetMultiMapping",name="subsetMapping",template="Vec3d,Vec3d", input='@'+deformableNode.getPathName()+'/DeformableMech' + ' ' + '@'+RigidifiedNode.getPathName()+'/RigidifiedMesh' , output='@./tetras', indexPairs=indexPairs.tolist())
+    # model.addObject('BoxROI', name='EndROI', box=SmallBox, drawBoxes=True, position="@tetras.rest_position", tetrahedra="@container.tetrahedra")   
+    #Test 
+    model.addObject('SphereROI', template="Vec3d", name='EndROI', centers=[-10, 0, Const.MagneticSkinHeight], radii=[Const.indenterRadius], drawSphere=True)
+
+    model.addObject('RestShapeSpringsForceField', points='@EndROI.indices', stiffness='1e12', external_rest_shape="@ExternalRefNode/ExternalMO")              
 
 
 
@@ -467,16 +592,22 @@ def createScene(rootNode):
     CFFMO = CFFNode.addObject('MechanicalObject', position='@loader.position') 
     CFFSphereROI = CFFNode.addObject('SphereROI', template="Vec3d", name='CFFSphereROI', centers=Const.indenterPosition, radii=[Const.indenterRadius], drawSphere=True)
     CFFSphereROI.init()              
-    CFF = CFFNode.addObject('ConstantForceField', name='CFF', template='Vec3', indices='@CFFSphereROI.indices', totalForce=[0, 0, 0])                               
+    CFF = CFFNode.addObject('ConstantForceField', name='CFF', template='Vec3', indices='@CFFSphereROI.indices', totalForce=[0, 0, 0], showArrowSize=0.0001)                               
     CFFNode.addObject("BarycentricMapping")
+    
 
 
+    ExternalRefNode = rootNode.addChild("ExternalRefNode")
+    ExternalRefNode.addObject('MechanicalObject', name='ExternalMO', template='Vec3', showObject=False, showObjectScale=15, showColor = [0,0,.7],
+                   showIndices=False, showIndicesScale=4e-5,
+                   position='@Simulation/Articulation/ServoWheel/RigidNode/RigidifiedNode/deformableNode/model/EndROI.pointsInROI')
 
 
     controller = rootNode.addObject(Controller(name="ActuationController", 
                                   RootNode=rootNode, 
                                   RigidMO=RigidMO,
                                   CFF=CFF,
+                                  CFFMO=CFFMO,
                                   CFFSphereROI=CFFSphereROI,
                                   articulationAngle=articulationAngle)) 
     

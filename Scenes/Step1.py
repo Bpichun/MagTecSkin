@@ -189,7 +189,7 @@ def createScene(rootNode):
   
     nominal_pose1 = [] 
     
-    for center in Const.rigidObjects[1:]:
+    for center in Const.rigidObjects[1:Const.NMagnets+1]:
         CurrentPose = center + TipOrientation
         nominal_pose1 += CurrentPose
     
@@ -215,7 +215,7 @@ def createScene(rootNode):
     RigidNode.addObject('SubsetMultiMapping',
                           name="mapping",
                           input=['@../dofs', '@/Simulation/freeCenter/dofs'],
-                          output='@./', indexPairs=Const.IndexPairs)
+                          output='@./', indexPairs=Const.IndexPairsMagnets)
     
     
     

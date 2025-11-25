@@ -80,6 +80,9 @@ class Controller(Sofa.Core.Controller):
         self.CFFSphereROI = kwargs['CFFSphereROI']  
         self.ContactNodeMO = kwargs["ContactNodeMO"]
         # self.ServoMO = kwargs["ServoMO"]
+        self.articulationAngle = kwargs['articulationAngle']
+        self.runArticulation = True
+        self.dt = 0.01
         self.t = 0
         print('Finished Init')
 
@@ -114,9 +117,25 @@ class Controller(Sofa.Core.Controller):
         self.SphereROIVisu.centers = [Sum]
         self.SphereCompleteMesh.centers = [Sum]
         self.SphereCompleteMeshSTL.centers = [Sum]
+    
+    
+    def animation(self, target, factor):
+        angle_start = np.deg2rad(Const.ArticulationAngleDeg)
+        angle_end   = np.deg2rad(-Const.ArticulationAngleDeg)
+        angle = angle_start + (angle_end - angle_start) * 0.5 * (1 - np.sin(2 * np.pi * factor))
+        target.dofs.rest_position[0][0] = angle   
+        
+
+    def updateArticulation(self):
+        self.t += self.dt
+        if Const.runAnimateArticulation == True:
+            self.animation(self.articulationAngle, self.t % 2.0)
+
 
 
     def onAnimateBeginEvent(self, eventType):
+        self.updateArticulation()
+
         
         # Move Sphere ROI and apply force 
         # self.MoveServo()
@@ -329,10 +348,7 @@ def createScene(rootNode):
     #            Articulation                           
     # ----------------------------------------
   
-   
-    # servoMO = scene.Simulation.addChild('Servo')
-    # servoMO.addObject('MechanicalObject', name='dofs', template='Vec3', position=[[0,0,Const.MagneticSkinHeight/2]])
-    # servoMO.addObject('RestShapeSpringsForceField', points='@dofs.indices', stiffness=1e5)
+
     
     # ---- Fixed servoBody ----
     servoBody = scene.Simulation.addChild('ServoBody')
@@ -349,7 +365,7 @@ def createScene(rootNode):
                                 rest_position=[[Const.ArticulationAngleRad]])
     articulationAngle.addObject('RestShapeSpringsForceField', points=0, stiffness=1e12)
     articulationAngle.addObject('UniformMass', totalMass=0.01)
-
+    articulationAngle.addObject('ArticulatedHierarchyContainer')
 
 
     # ---- ServoWheel ----
@@ -385,7 +401,7 @@ def createScene(rootNode):
   
     nominalPoseFreeCenters = [] 
     
-    for center in Const.rigidObjects[1:]:
+    for center in Const.rigidObjects[1:Const.NMagnets+1]:
         CurrentPose = center + TipOrientation
         nominalPoseFreeCenters += CurrentPose
     
@@ -427,7 +443,7 @@ def createScene(rootNode):
     RigidNode.addObject('SubsetMultiMapping',
                           name="mapping",
                           input=['@Simulation/Articulation/ServoWheel/dofs',
-                                 '@/Simulation/freeCenter/dofs', 
+                                 '@Simulation/freeCenter/dofs', 
                                  '@Simulation/Articulation/ServoWheel/sensorCenter/dofs'],
                           output='@./', indexPairs= [Const.IndexPairs])
     
@@ -469,8 +485,6 @@ def createScene(rootNode):
   
     
     
-    
-    
     # ##########################################
     # # Points On Surface                      #
     # ##########################################   
@@ -509,26 +523,26 @@ def createScene(rootNode):
     rootNode.addObject(Controller(name="ActuationController", 
                                   RootNode=rootNode, 
                                   RigidMO=RigidMO,
-                                #   SensorMO= SensorMO,
                                   ContactNodeMO = ContactNodeMO,
                                   CFF=CFF,
-                                  CFFSphereROI=CFFSphereROI)) 
+                                  CFFSphereROI=CFFSphereROI,
+                                  articulationAngle=articulationAngle)) 
     
-    
-    def animation(target, factor):
-        angle_start = Const.ArticulationAngleDeg   
-        angle_end = -Const.ArticulationAngleDeg   
-        
-        angle_start = np.deg2rad(angle_start)
-        angle_end = np.deg2rad(angle_end)
 
-        angle = angle_start + (angle_end - angle_start) * 0.5 * (1 - np.sin(2 * np.pi * factor))
-    
-        target.dofs.rest_position[0][0] = angle 
+    # def animation(target, factor):
+    #     angle_start = Const.ArticulationAngleDeg   
+    #     angle_end = -Const.ArticulationAngleDeg   
         
-    #Aimation function
+    #     angle_start = np.deg2rad(angle_start)
+    #     angle_end = np.deg2rad(angle_end)
 
-    if Const.runAnimateArticulation == True:
-        animate(animation, {'target': articulationAngle}, duration=2, mode='loop')
+    #     angle = angle_start + (angle_end - angle_start) * 0.5 * (1 - np.sin(2 * np.pi * factor))
+    
+    #     target.dofs.rest_position[0][0] = angle 
+        
+    # #Aimation function
+
+    # if Const.runAnimateArticulation == True:
+    #     animate(animation, {'target': articulationAngle}, duration=2, mode='loop')
     
     return scene

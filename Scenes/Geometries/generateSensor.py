@@ -57,6 +57,14 @@ BoxDimTag = ExtrudeOut[1]                                                  # ID 
 # factory.cut([BoxDimTag],[MagnetDimTag1] )
 
 
+gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", SurfaceMeshCharacteristicLength)  # Small characteristic length = finer mesh
+synchronize()   
+gmsh.model.mesh.generate(2)                                     # Generate surface mesh (2D)
+gmsh.write("MagneticSkin.stl")                                        # Save as STL
+
+synchronize()
+launchGUI()
+
 
 
 boxroiTags = []
@@ -107,13 +115,13 @@ launchGUI()               # Open GUI to review the geometry
 
 gmsh.write("MagneticSkin.step")    # Save geometry in STEP format (CAD)
 
-gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", SurfaceMeshCharacteristicLength)  # Small characteristic length = finer mesh
-synchronize()   
-gmsh.model.mesh.generate(2)                                     # Generate surface mesh (2D)
-gmsh.write("MagneticSkin.stl")                                        # Save as STL
+# gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", SurfaceMeshCharacteristicLength)  # Small characteristic length = finer mesh
+# synchronize()   
+# gmsh.model.mesh.generate(2)                                     # Generate surface mesh (2D)
+# gmsh.write("MagneticSkin.stl")                                        # Save as STL
 
-synchronize()
-launchGUI()
+# synchronize()
+# launchGUI()
 
 gmsh.model.mesh.clear()
 gmsh.option.setNumber("Mesh.CharacteristicLengthFactor", VolumeMeshCharacteristicLength)  # Mesh for volume
