@@ -250,8 +250,15 @@ def createScene(rootNode):
         'Sofa.GUI.Component',
 
     ]
+    rootNode.addObject('RequiredPlugin', name='Sofa.Component.Engine.Select')
+    rootNode.addObject('RequiredPlugin', name='Sofa.Component.LinearSolver.Iterative')
+    rootNode.addObject('RequiredPlugin', name='Sofa.Component.Mapping.Linear')
+    rootNode.addObject('RequiredPlugin', name='Sofa.Component.MechanicalLoad')
+    rootNode.addObject('RequiredPlugin', name='Sofa.Component.Setting')
+    rootNode.addObject('RequiredPlugin', name='Sofa.Component.SolidMechanics.FEM.Elastic')
+    rootNode.addObject('RequiredPlugin', name='Sofa.Component.Topology.Container.Dynamic')
 
-    
+        
     scene = Scene(rootNode, plugins=pluginsList, iterative=False)
     scene.addMainHeader()
     scene.addObject('DefaultVisualManagerLoop')
@@ -400,7 +407,8 @@ def createScene(rootNode):
     # visualservoWheel.addObject('RestShapeSpringsForceField', points=0, stiffness=1)
 
     # visualservoWheel.addObject('UniformMass', totalMass=0.01)
-    visualservoWheel.addObject("FixedConstraint", indices=0)
+    # visualservoWheel.addObject("FixedConstraint", indices=0)
+    servoWheel.addObject('FixedProjectiveConstraint', indices=[0])
     visualservoWheel.addObject('MeshSTLLoader', name='loader', filename= GeneratedMeshesPath + 'thumb_fingertip.stl')
     visualservoWheel.addObject('MeshTopology', src='@loader')
     visualservoWheel.addObject('OglModel', color=[0.4, 0.45, 0.5, 1.0], translation=[-0, 0, -0])
@@ -453,7 +461,7 @@ def createScene(rootNode):
     RigidNode.addObject('SubsetMultiMapping',
                           name="mapping",
                           input=['@../dofs', '@/Simulation/freeCenter/dofs'],
-                          output='@./', indexPairs= [Const.IndexPairs])
+                          output='@./', indexPairs= [[0, 1, 1, 0, 1, 1, 1, 2, 1, 3]])
     
     
     

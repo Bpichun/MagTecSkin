@@ -50,10 +50,10 @@ GridMargin = 10                                 # Margin from the edges to place
 
 # ---- Generate grid for magnets and sensors positions  ----
 #If Use_Parametric == True
-GridrowsMagnets = 2                            # Number of rows in the magnet grid
-GridcolsMagnets = 3                            # Number of columns in the magnet grid
-GridrowsSensors = 2                            # Number of rows in the sensor grid    (X)
-GridcolsSensors = 3                            # Number of columns in the sensor grid (Y)
+GridrowsMagnets = 1                            # Number of rows in the magnet grid
+GridcolsMagnets = 2                            # Number of columns in the magnet grid
+GridrowsSensors = 1                            # Number of rows in the sensor grid    (X)
+GridcolsSensors = 2                            # Number of columns in the sensor grid (Y)
 
 
 
@@ -62,11 +62,11 @@ GridcolsSensors = 3                            # Number of columns in the sensor
 indenterRadius = 2                                    # Radius of the sphere used as the indenter
 indenterPosition = [0, -5, MagneticSkinHeight]        # Initial position of the indenter 
 indenterMotion = True                               # Enables or disables motion of the indenter
-# identadorForce = [0, 0, -300000]                      # Total force applied by the indenter 
+identadorForce = [0, 0, -300000]                      # Total force applied by the indenter 
 
 # Articulation parameters
-ArticulationAngleDeg = -40                            # Articulation angle in degrees
-runAnimateArticulation = False                    # Flag to enable/disable animation of the articulation
+ArticulationAngleDeg = -10                            # Articulation angle in degrees
+runAnimateArticulation = True                   # Flag to enable/disable animation of the articulation
 ArticulationAxis = -10 
 
 # Magnetic moment magnitude
@@ -150,10 +150,11 @@ rigidObjects = rigidObjects.tolist()
 # ---- Fixed BoxROI coordinates ----
 
 # Defines a fixed region of interest (ROI) box with margins around the magnetic skin (rigid)
-BoxROIFixCoords = getBoxroiCoords(centers = [[MagneticSkinLength/3.5, 0, 0]] , #3.5
+BoxROIFixCoords = getBoxroiCoords(centers = [[MagneticSkinLength/2.1, 0, 0]] , #3.5
                                   lengths = [MagneticSkinLength/2.3, MagneticSkinWidth, BoxTolerance], #2.3
                                   tolerance = BoxTolerance)
 
+print("BoxROIFixCoords:", BoxROIFixCoords)
 # Defines a rigidified region box on the opposite side (articulation)
 BoxROIFixCoordsArt = getBoxroiCoords(centers = [[-MagneticSkinLength/4  , 0, 0]] , 
                                      lengths = [MagneticSkinLength/2, MagneticSkinWidth, BoxTolerance],
@@ -165,7 +166,7 @@ BoxROIFixCoordsThumb = getBoxroiCoords(centers = [[-MagneticSkinLength/6.5, 0, 0
                                        lengths = [MagneticSkinLength/1.4, MagneticSkinWidth, BoxTolerance],
                                        tolerance = BoxTolerance)
 
-
+print("BoxROIFixCoordsThumb:", BoxROIFixCoordsThumb)
 # ---- BoxROI coordinates for sensors and magnets----
 SensorBoxCoords = getBoxroiCoords(centers = SensorCenters, 
                                   lengths = (SensorLength, SensorWidth, SensorHeigth), 
@@ -202,5 +203,11 @@ for i, center in enumerate(SensorCenters):
         index = 1
     indexPerPointSensor.append((index))
     indexSubSetMapSensor.append((2, i))
+    # indexSubSetMapSensor.append((index, i))
 
 IndexPairs += [idx for pair in indexSubSetMapSensor for idx in pair]  # Map each Sensors
+
+# indexSubSetMapSensor.append((index, i))
+print("IndexPairs:", IndexPairs)
+
+print(rigidObjects[1:])
